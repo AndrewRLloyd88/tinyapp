@@ -6,6 +6,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // set the view engine to ejs
 app.set("view engine", "ejs");
 
+//returns 6 random characters from characters and associates the new tinyURL to a longURL
 function generateRandomString() {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let tinyURL = "";
@@ -40,7 +41,6 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[`${req.params.shortURL}`] };
   res.render("urls_show", templateVars);
@@ -50,7 +50,7 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString() //Log the randomly generated tinyURL to the console
   urlDatabase[shortURL] = req.body.longURL;
-  console.log(urlDatabase);
+  console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
