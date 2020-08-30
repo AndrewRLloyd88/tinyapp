@@ -9,7 +9,7 @@ app.set("view engine", "ejs");
 function generateRandomString() {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
   let tinyURL = "";
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     const randomNum = Math.floor(Math.random() * characters.length)
     tinyURL += characters[randomNum];
   }
@@ -47,8 +47,10 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  console.log(generateRandomString()) //Log the randomly generated tinyURL to the console
+  // console.log(req.body);  // Log the POST request body to the console
+  let shortURL = generateRandomString() //Log the randomly generated tinyURL to the console
+  urlDatabase[shortURL] = req.body.longURL;
+  console.log(urlDatabase);
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
