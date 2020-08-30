@@ -18,11 +18,21 @@ const generateRandomString = () => {
   return tinyURL;
 };
 
+//database is not yet persistent when server restarts
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
   "S152tx": "https://www.tsn.ca/"
 };
+
+// Edge cases
+
+// What would happen if a client requests a non-existent shortURL?
+//timeout because the resource has been found but it cant re-direct to anything.
+
+// What happens to the urlDatabase when the server is restarted?
+// What type of status code do our redirects have? What does this status code mean?
+// 302 Found - This response code means that the URI of requested resource has been changed temporarily. Further changes in the URI might be made in the future. Therefore, this same URI should be used by the client in future requests.
 
 //Routes
 app.get("/", (req, res) => {
@@ -40,6 +50,11 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[`${req.params.shortURL}`]
+  res.redirect(longURL);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
