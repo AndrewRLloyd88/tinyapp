@@ -11,7 +11,8 @@ const generateRandomString = () => {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let tinyURL = "";
   for (let i = 0; i < 6; i++) {
-    const randomNum = Math.floor(Math.random() * characters.length);
+    //use round to generate a number that can round up to between 0 and characters.length
+    const randomNum = Math.round(Math.random() * characters.length);
     tinyURL += characters[randomNum];
   }
   return tinyURL;
