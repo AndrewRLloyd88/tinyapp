@@ -7,15 +7,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
-function generateRandomString() {
-  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const generateRandomString = () => {
+  const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let tinyURL = "";
   for (let i = 0; i < 6; i++) {
-    const randomNum = Math.floor(Math.random() * characters.length)
+    const randomNum = Math.floor(Math.random() * characters.length);
     tinyURL += characters[randomNum];
   }
   return tinyURL;
-}
+};
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -48,8 +48,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
-  let shortURL = generateRandomString() //Log the randomly generated tinyURL to the console
-  urlDatabase[shortURL] = req.body.longURL;
+  let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
+  urlDatabase[shortURL] = req.body.longURL; //send the new shortURL and longURL to urlDatabase
   console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
