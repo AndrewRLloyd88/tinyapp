@@ -52,7 +52,7 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
   urlDatabase[shortURL] = req.body.longURL; //send the new shortURL and longURL to urlDatabase
   console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
 
 app.get("/hello", (req, res) => {
