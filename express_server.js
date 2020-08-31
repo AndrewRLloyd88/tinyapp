@@ -25,6 +25,9 @@ const urlDatabase = {
   "S152tx": "https://www.tsn.ca/"
 };
 
+//test array
+const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
+
 // Edge cases
 
 // What would happen if a client requests a non-existent shortURL?
@@ -36,7 +39,7 @@ const urlDatabase = {
 
 //Routes
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
 });
 
 app.get("/urls.json", (req, res) => {
