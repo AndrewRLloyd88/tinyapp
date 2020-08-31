@@ -12,7 +12,7 @@ const generateRandomString = () => {
   let tinyURL = "";
   for (let i = 0; i < 6; i++) {
     //use round to generate a number that can round up to between 0 and characters.length
-    const randomNum = Math.round(Math.random() * characters.length);
+    const randomNum = Math.floor(Math.random() * characters.length);
     tinyURL += characters[randomNum];
   }
   return tinyURL;
@@ -62,6 +62,11 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[`${req.params.shortURL}`];
+  res.redirect("/urls");
+})
+
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
@@ -69,6 +74,7 @@ app.post("/urls", (req, res) => {
   console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
+
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
