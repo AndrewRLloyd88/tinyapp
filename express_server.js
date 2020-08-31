@@ -52,6 +52,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -71,11 +72,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 })
 
+//updates an existing entries long URL redirects the user to /urls
+app.post("/urls/:shortURL/update", (req, res) => {
+  urlDatabase[req.params.shortURL] = req.body.longURL
+  console.log(urlDatabase)
+  res.redirect("/urls");
+})
+
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
   urlDatabase[shortURL] = req.body.longURL; //send the new shortURL and longURL to urlDatabase
-  console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
+  // console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
 
@@ -87,3 +95,4 @@ app.get("/hello", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
