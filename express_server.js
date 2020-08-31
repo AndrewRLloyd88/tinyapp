@@ -25,7 +25,7 @@ const urlDatabase = {
   "S152tx": "https://www.tsn.ca/"
 };
 
-//test array
+//test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 
 
@@ -39,14 +39,17 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 // 302 Found - This response code means that the URI of requested resource has been changed temporarily. Further changes in the URI might be made in the future. Therefore, this same URI should be used by the client in future requests.
 
 //Routes
+//Test home route - currently using to experiment with objects as I learn
 app.get("/", (req, res) => {
   res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
 });
 
+//added through duration of the work - shows tinyURLS and largeURLS in JSON format
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//displays the current url database
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -57,16 +60,19 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+//handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[`${req.params.shortURL}`]
   res.redirect(longURL);
 });
 
+//displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[`${req.params.shortURL}`] };
   res.render("urls_show", templateVars);
 });
 
+//handles a deletion request using the delete button on urls/ route
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[`${req.params.shortURL}`];
   res.redirect("/urls");
@@ -79,6 +85,7 @@ app.post("/urls/:shortURL/update", (req, res) => {
   res.redirect("/urls");
 })
 
+//generates new tinyURL with a random shortURL using the generateRandomString() function
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
@@ -87,11 +94,12 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
 
-
+//Test Hello Route - Delete later as extraneous code
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+//server listen - opens the server up to listen for requests from user
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
