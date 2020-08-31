@@ -28,6 +28,7 @@ const urlDatabase = {
 //test array
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 
+
 // Edge cases
 
 // What would happen if a client requests a non-existent shortURL?
