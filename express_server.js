@@ -50,6 +50,12 @@ app.post("/login", (req, res) => {
   res.redirect("/urls");
 });
 
+app.post("/logout", (req, res) => {
+  //should set a cookie names username to value submitted in req body via login form
+  res.cookie("username", "");
+  res.redirect("/urls");
+});
+
 
 
 //Test home route - currently using to experiment with objects as I learn

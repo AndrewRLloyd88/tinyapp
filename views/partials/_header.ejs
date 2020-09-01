@@ -8,15 +8,22 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-
       </div>
     </div>
-    <div style="display: flex; justify-content: flex-end; align-items: center;">
-      <p class="nav-item" style="align-items: center; margin-bottom: 0; font-weight: 900;"><%= username %></p>
-      <form action="/login" method="post" style="display: flex; justify-content: flex-end;">
-        <input class="form-control type="text" name="username" placeholder="Enter username" style="width: 300px; margin: 1em">
+    <% if(username !== ""){ %>
+      <div style="display: flex; justify-content: flex-end; align-items: center; padding: 23px 30px;">
+        <form action="/logout" method="post" style="display: flex; justify-content: flex-end;">
+        <p class="nav-item" style="align-items: center; margin-bottom: 0; font-weight: 900; padding-right: 25px;">Logged in as TinyApp User: <%= username %></p>
       </div>
-        <button class="btn btn-outline-dark">Submit</button>
+        <button class="btn btn-outline-dark">Logout</button>
       </form>
+      <% } else{ %>  
+        <div style="display: flex; justify-content: flex-end; align-items: center;">
+        <form action="/login" method="post" style="display: flex; justify-content: flex-end;">
+          <input class="form-control type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em">
+        </div>
+          <button class="btn btn-outline-dark">Login</button>
+        </form>
+     <% } %>
     </nav>
   </header>
