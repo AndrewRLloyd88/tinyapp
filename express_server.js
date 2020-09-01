@@ -84,16 +84,28 @@ const emailLookup = (email) => {
 //user management specific routes//
 ///////////////////////////////////
 //route that handles login button and sets cookie users name
+
+
+
+app.get("/login", (req, res) => {
+  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
+  res.render('login', templateVars);
+})
+
+
 app.post("/login", (req, res) => {
   //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
   for (const users in userDatabase) {
-    if (req.body.username === userDatabase[users].id) {
+    if (req.body.email === userDatabase[users].email) {
       res.cookie("user_id", userDatabase[users].id);
     }
   }
 
   res.redirect("/urls");
 });
+
+
+
 
 //route that handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {

@@ -11,7 +11,7 @@
       </div>
     </div>
     <% if(user_id){ %>
-      <div style="display: flex; justify-content: flex-end; align-items: center; padding: 23px 30px;">
+      <div style="display: flex; justify-content: flex-end; align-items: center; padding: 0 30px;">
         <form action="/logout" method="post" style="display: flex; justify-content: flex-end;">
         <p class="nav-item" style="align-items: center; margin-bottom: 0; font-weight: 900; padding-right: 25px;">Logged in as TinyApp User: <%= userEmail %></p>
       </div>
@@ -19,11 +19,15 @@
       </form>
       <% } else{ %>  
         <div style="display: flex; justify-content: flex-end; align-items: center;">
-        <form action="/login" method="post" style="display: flex; justify-content: flex-end;">
-          <input class="form-control type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em">
-        </div>
-          <button class="btn btn-outline-dark">Login</button>
-        </form>
+          <form action="/register" method="get" style="display: flex; justify-content: flex-end;">
+          </div>
+            <button class="btn btn-outline-dark" style="margin-right: 10px;">Register</button>
+          </form>
+          <div style="display: flex; justify-content: flex-end; align-items: center;">
+            <form action="/login" method="get" style="display: flex; justify-content: flex-end;">
+            </div>
+              <button class="btn btn-outline-dark">Login</button>
+            </form>
      <% } %>
     </nav>
   </header>
