@@ -44,6 +44,17 @@ const userDatabase = {
 //test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 
+const checkUserEmail = (cookie) => {
+  if(cookie !== ""){
+    for(users in userDatabase){
+      if(cookie === userDatabase[users].id){
+        return userDatabase[users].email
+      }
+    }
+  } else {
+    return undefined;
+  }
+};
 
 // Edge cases
 
@@ -59,7 +70,7 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 //user management specific routes
 //route that handles login button and sets cookie users name
 app.post("/login", (req, res) => {
-  //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[ranodmID]
+  //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
   for(users in userDatabase) {
     if(req.body.username === userDatabase[users].id){
       res.cookie("user_id", userDatabase[users].id);
@@ -71,7 +82,7 @@ app.post("/login", (req, res) => {
 
 //route that handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
-  //should set a cookie names username to value submitted in req body via login form
+  //set the user_id cookie to an empty string on logout
   res.cookie("user_id", "");
   res.redirect("/urls");
 });
@@ -79,7 +90,7 @@ app.post("/logout", (req, res) => {
 //displays the register page
 app.get("/register", (req, res) => {
   //change template Vars to use user ID now
-  let templateVars = { user_id: req.cookies["user_id"]}
+  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserEmail(req.cookies['user_id'])}
   res.render("register", templateVars);
 });
 
@@ -115,7 +126,8 @@ app.get("/urls.json", (req, res) => {
 //displays the current url database
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, 
-    user_id: req.cookies["user_id"] 
+    user_id: req.cookies["user_id"],
+    userEmail: checkUserEmail(req.cookies['user_id'])
   //any other vars
   };
   res.render("urls_index", templateVars);
@@ -123,7 +135,7 @@ app.get("/urls", (req, res) => {
 
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"]}
+  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserEmail(req.cookies['user_id'])}
   res.render("urls_new", templateVars);
 });
 
@@ -135,7 +147,12 @@ app.get("/u/:shortURL", (req, res) => {
 
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[`${req.params.shortURL}`],  username: req.cookies["username"] };
+  let templateVars = { 
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[`${req.params.shortURL}`],  
+    user_id: req.cookies["user_id"],
+    userEmail: checkUserEmail(req.cookies['user_id'])
+    };
   res.render("urls_show", templateVars);
 });
 
