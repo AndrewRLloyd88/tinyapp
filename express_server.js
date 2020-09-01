@@ -27,6 +27,20 @@ const urlDatabase = {
   "S152tx": "https://www.tsn.ca/"
 };
 
+
+const userDatabase = {
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 //test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 
@@ -45,21 +59,45 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 //user management specific routes
 //route that handles login button and sets cookie users name
 app.post("/login", (req, res) => {
-  //should set a cookie names username to value submitted in req body via login form
-  res.cookie("username", req.body.username);
+  //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[ranodmID]
+  for(users in userDatabase) {
+    if(req.body.username === userDatabase[users].id){
+      res.cookie("user_id", userDatabase[users].id);
+    }
+  }
+  
   res.redirect("/urls");
 });
 
 //route that handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
   //should set a cookie names username to value submitted in req body via login form
-  res.cookie("username", "");
+  res.cookie("user_id", "");
   res.redirect("/urls");
 });
 
+//displays the register page
 app.get("/register", (req, res) => {
-  let templateVars = { username: req.cookies["username"]}
+  //change template Vars to use user ID now
+  let templateVars = { user_id: req.cookies["user_id"]}
   res.render("register", templateVars);
+});
+
+//handles a new user registration
+app.post("/register", (req, res) => {
+  //generate a random userID
+  let id = generateRandomString()
+  //implement a loop to check if userID/email exists?
+  //store user in userDB
+  userDatabase[id] = { 
+    id: id , 
+    email: req.body.email, 
+    password: req.body.password 
+  }
+  //cookies now use randomly generated userID
+  res.cookie("user_id", id);
+  console.log(userDatabase) //log userDB to see if user was added OK
+  res.redirect("urls");
 });
 
 
@@ -77,7 +115,7 @@ app.get("/urls.json", (req, res) => {
 //displays the current url database
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, 
-    username: req.cookies["username"] 
+    user_id: req.cookies["user_id"] 
   //any other vars
   };
   res.render("urls_index", templateVars);
