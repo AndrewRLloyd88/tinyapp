@@ -43,13 +43,14 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 //Routes
 
 //user management specific routes
-
+//route that handles login button and sets cookie users name
 app.post("/login", (req, res) => {
   //should set a cookie names username to value submitted in req body via login form
   res.cookie("username", req.body.username);
   res.redirect("/urls");
 });
 
+//route that handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
   //should set a cookie names username to value submitted in req body via login form
   res.cookie("username", "");
