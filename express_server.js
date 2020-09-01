@@ -2,7 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser')
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser())
 // set the view engine to ejs
 app.set("view engine", "ejs");
 
@@ -39,6 +41,17 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
 // 302 Found - This response code means that the URI of requested resource has been changed temporarily. Further changes in the URI might be made in the future. Therefore, this same URI should be used by the client in future requests.
 
 //Routes
+
+//user management specific routes
+
+app.post("/login", (req, res) => {
+  //should set a cookie names username to value submitted in req body via login form
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
+});
+
+
+
 //Test home route - currently using to experiment with objects as I learn
 app.get("/", (req, res) => {
   res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
