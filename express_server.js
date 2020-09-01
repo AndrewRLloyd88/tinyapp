@@ -2,9 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser())
+app.use(cookieParser());
 // set the view engine to ejs
 app.set("view engine", "ejs");
 
@@ -27,33 +27,46 @@ const urlDatabase = {
   "S152tx": "https://www.tsn.ca/"
 };
 
-
+//userDatabase with two test entries - not persistent over server resets
 const userDatabase = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 //test array for use on "/" route - will become surplus to requirements later on
-const greetings = ["Hi", "Hello", "welcome", "Wilkommen"]
+const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
-const checkUserEmail = (cookie) => {
-  if(cookie !== ""){
-    for(users in userDatabase){
-      if(cookie === userDatabase[users].id){
-        return userDatabase[users].email
+//checks user_id cookie and sees if there is a matching userID in the database.
+const checkUserId = (cookie) => {
+  if (cookie !== "") {
+    for (const users in userDatabase) {
+      if (cookie === userDatabase[users].id) {
+        //return users email to use in the header partial
+        return userDatabase[users].email;
       }
     }
   } else {
     return undefined;
   }
+};
+
+//checks we are not duplicating creation of username by checking email
+const emailLookup = (email) => {
+  for (const users in userDatabase) {
+    //does the submitted email match an email in our db?
+    if (email === userDatabase[users].email) {
+      return true;
+    }
+  }
+  return false;
 };
 
 // Edge cases
@@ -67,16 +80,18 @@ const checkUserEmail = (cookie) => {
 
 //Routes
 
-//user management specific routes
+///////////////////////////////////
+//user management specific routes//
+///////////////////////////////////
 //route that handles login button and sets cookie users name
 app.post("/login", (req, res) => {
   //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
-  for(users in userDatabase) {
-    if(req.body.username === userDatabase[users].id){
+  for (const users in userDatabase) {
+    if (req.body.username === userDatabase[users].id) {
       res.cookie("user_id", userDatabase[users].id);
     }
   }
-  
+
   res.redirect("/urls");
 });
 
@@ -90,25 +105,36 @@ app.post("/logout", (req, res) => {
 //displays the register page
 app.get("/register", (req, res) => {
   //change template Vars to use user ID now
-  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserEmail(req.cookies['user_id'])}
+  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
   res.render("register", templateVars);
 });
 
 //handles a new user registration
 app.post("/register", (req, res) => {
-  //generate a random userID
-  let id = generateRandomString()
-  //implement a loop to check if userID/email exists?
-  //store user in userDB
-  userDatabase[id] = { 
-    id: id , 
-    email: req.body.email, 
-    password: req.body.password 
+  //check if req.body.email or req.body.password are not blank
+  if (req.body.email === "" || req.body.password === "") {
+    //send a 400 error - Bad Request
+    res.sendStatus(400);
   }
-  //cookies now use randomly generated userID
-  res.cookie("user_id", id);
-  console.log(userDatabase) //log userDB to see if user was added OK
-  res.redirect("urls");
+  //check if someone tries to register an already registered email address
+  if (emailLookup(req.body.email)) {
+    res.sendStatus(400);
+  } else {
+
+    //generate a random userID
+    let id = generateRandomString();
+    //implement a loop to check if userID/email exists?
+    //store user in userDB
+    userDatabase[id] = {
+      id: id,
+      email: req.body.email,
+      password: req.body.password
+    };
+    //cookies now use randomly generated userID
+    res.cookie("user_id", id);
+    console.log(userDatabase); //log userDB to see if user was added OK
+    res.redirect("urls");
+  }
 });
 
 
@@ -125,34 +151,35 @@ app.get("/urls.json", (req, res) => {
 
 //displays the current url database
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, 
+  let templateVars = {
+    urls: urlDatabase,
     user_id: req.cookies["user_id"],
-    userEmail: checkUserEmail(req.cookies['user_id'])
-  //any other vars
+    userEmail: checkUserId(req.cookies['user_id'])
+    //any other vars
   };
   res.render("urls_index", templateVars);
 });
 
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserEmail(req.cookies['user_id'])}
+  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
   res.render("urls_new", templateVars);
 });
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[`${req.params.shortURL}`]
+  const longURL = urlDatabase[`${req.params.shortURL}`];
   res.redirect(longURL);
 });
 
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[`${req.params.shortURL}`],  
+  let templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[`${req.params.shortURL}`],
     user_id: req.cookies["user_id"],
-    userEmail: checkUserEmail(req.cookies['user_id'])
-    };
+    userEmail: checkUserId(req.cookies['user_id'])
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -160,14 +187,14 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[`${req.params.shortURL}`];
   res.redirect("/urls");
-})
+});
 
 //updates an existing entries long URL redirects the user to /urls
 app.post("/urls/:shortURL/update", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL
-  console.log(urlDatabase)
+  urlDatabase[req.params.shortURL] = req.body.longURL;
+  console.log(urlDatabase);
   res.redirect("/urls");
-})
+});
 
 //generates new tinyURL with a random shortURL using the generateRandomString() function
 app.post("/urls", (req, res) => {
