@@ -64,13 +64,17 @@ app.get("/urls.json", (req, res) => {
 
 //displays the current url database
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase, 
+    username: req.cookies["username"] 
+  //any other vars
+  };
   res.render("urls_index", templateVars);
 });
 
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = { username: req.cookies["username"]}
+  res.render("urls_new", templateVars);
 });
 
 //handles a redirect from the u/shortURL to the full longURL
@@ -81,7 +85,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[`${req.params.shortURL}`] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[`${req.params.shortURL}`],  username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
 
