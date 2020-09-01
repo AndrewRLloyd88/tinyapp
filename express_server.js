@@ -57,6 +57,11 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 });
 
+app.get("/register", (req, res) => {
+  let templateVars = { username: req.cookies["username"]}
+  res.render("register", templateVars);
+});
+
 
 
 //Test home route - currently using to experiment with objects as I learn
