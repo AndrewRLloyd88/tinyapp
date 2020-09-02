@@ -5,6 +5,11 @@ const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const uuid = require('uuid');
+const bcrypt = require('bcrypt');
+//generate 10 salt rounds
+const salt = bcrypt.genSalt(10);
+
+// const password = "purple-monkey-dinosaur"; // found in the req.params object
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 // set the view engine to ejs
@@ -49,12 +54,12 @@ const userDatabase = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 };
 
@@ -90,7 +95,8 @@ const emailLookup = (email) => {
 const passwordCheck = (password) => {
   for (const users in userDatabase) {
     //does the submitted email match an email in our db?
-    if (password === userDatabase[users].password) {
+    if(bcrypt.compareSync(password, userDatabase[users].password )) {
+    // if (password === userDatabase[users].password) {
       return true;
     }
   }
@@ -219,7 +225,8 @@ app.post("/register", (req, res) => {
   } else if (emailLookup(req.body.email)) {
     res.sendStatus(400);
   } else {
-
+    //use bCrypt to auto-generate a salt and hash from plaintext:
+    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     //generate a random userID
     let id = generateRandomString();
     //implement a loop to check if userID/email exists?
@@ -227,7 +234,7 @@ app.post("/register", (req, res) => {
     userDatabase[id] = {
       id: id,
       email: req.body.email,
-      password: req.body.password
+      password: hashedPassword
     };
     //cookies now use randomly generated userID
     res.cookie("user_id", id);
