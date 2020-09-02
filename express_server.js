@@ -25,17 +25,18 @@ const generateRandomString = () => {
 
 //database is not yet persistent when server restarts
 const urlDatabase = {
-  "b2xVn2": { 
-    longURL: "http://www.lighthouselabs.ca", 
-    userID: "userRandomID" 
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "userRandomID"
   },
-  "9sm5xK": { 
-    longURL: "http://www.google.com", 
-    userID: "user2RandomID" 
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "user2RandomID"
   },
-  "S152tx": { 
-    longURL: "https://www.tsn.ca/", 
-    userID: "userRandomID"}
+  "S152tx": {
+    longURL: "https://www.tsn.ca/",
+    userID: "userRandomID"
+  }
 };
 
 //userDatabase with two test entries - not persistent over server resets
@@ -115,14 +116,26 @@ const isLoggedIn = (req) => {
 const urlsForUser = (id) => {
   //remember to clear userURLS
   userURLS = {}
-  for(const url in urlDatabase){
-    if(id === urlDatabase[url].userID) { 
-      userURLS[url] = urlDatabase[url].longURL}
+  for (const url in urlDatabase) {
+    if (id === urlDatabase[url].userID) {
+      userURLS[url] = urlDatabase[url].longURL
     }
-    console.log(userURLS)
-    return userURLS;
   }
+  console.log(userURLS)
+  return userURLS;
+}
 
+const checkUserOwnsURL = (id, request) => {
+  // console.log("request: " + request)
+  for (urls in urlDatabase) {
+    if (urlDatabase[request].userID !== id) {
+      // console.log(request.user_id + " " + "in checkUserOwnsUrl")
+      return false
+    } else {
+      return true;
+    }
+  }
+}
 
 
 // Edge cases
@@ -171,7 +184,7 @@ app.post("/login", (req, res) => {
         userURLS = urlsForUser(req.cookies.user_id)
       }
     }
-    
+
     res.redirect("/urls");
   }
 });
@@ -265,8 +278,8 @@ app.get("/urls", (req, res) => {
   if (!isLoggedIn(req)) {
     res.render("login", templateVars);
   } else {
-    
-    
+
+
     res.render("urls_index", templateVars);
   }
 });
@@ -297,12 +310,14 @@ app.get("/urls/:shortURL", (req, res) => {
     userEmail: checkUserId(req.cookies['user_id'])
   };
 
-    res.render("urls_show", templateVars);
+  res.render("urls_show", templateVars);
 });
 
 //handles a deletion request using the delete button on urls/ route
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!isLoggedIn(req)) {
+    res.sendStatus(403);
+  } else if (!checkUserOwnsURL(req.cookies.user_id)) {
     res.sendStatus(403);
   } else {
     delete urlDatabase[`${req.params.shortURL}`];
@@ -312,12 +327,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //updates an existing entries long URL redirects the user to /urls
 app.post("/urls/:shortURL/update", (req, res) => {
+  //is the user logged in?
   if (!isLoggedIn(req)) {
     res.sendStatus(403);
+  } else if (!checkUserOwnsURL(req.cookies.user_id, req.params.shortURL)) {
+    // console.log(req.cookies.user_id)
+    // console.log()
+    res.sendStatus(403);
   } else {
-  urlDatabase[req.params.shortURL] = { longURL : req.body.longURL, userID: req.cookies.user_id };
-  console.log(urlDatabase);
-  res.redirect("/urls");
+    urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.cookies.user_id };
+    console.log(urlDatabase);
+    res.redirect("/urls");
+
   }
 });
 
@@ -326,7 +347,7 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
   console.log(req.body.longURL)
-  urlDatabase[shortURL] = { longURL : req.body.longURL, userID: req.cookies.user_id }; //send the new shortURL and longURL to urlDatabase
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies.user_id }; //send the new shortURL and longURL to urlDatabase
   console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });

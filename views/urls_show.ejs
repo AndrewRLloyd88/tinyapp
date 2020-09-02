@@ -15,6 +15,7 @@
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
       </div>
+      <% if(user_id){ %>
     <div class="card-footer text-muted">
       <h1>Edit</h1>
       <form action="/urls/<%=shortURL%>/update" method="POST">
@@ -26,7 +27,19 @@
       </form>
     </div>
   </div>
-
+  <% } else{ %> 
+    <div class="card-footer text-muted">
+      <h1>Register or login to create and edit your own TinyURLS!</h1>
+      <form action="/urls/<%=shortURL%>/update" method="POST">
+        <div class="form-group mb-2">
+          <label for="longURL">New URL:</label>
+          <input type="text" name="longURL" placeholder="http://" style="width: 300px; margin: 1em" disabled>
+          <button class="btn btn-primary" disabled>Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+    <% } %>
 
   <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
