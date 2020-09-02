@@ -23,9 +23,17 @@ const generateRandomString = () => {
 
 //database is not yet persistent when server restarts
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
-  "S152tx": "https://www.tsn.ca/"
+  "b2xVn2": { 
+    longURL: "http://www.lighthouselabs.ca", 
+    userID: "userRandomID" 
+  },
+  "9sm5xK": { 
+    longURL: "http://www.google.com", 
+    userID: "userRandomID" 
+  },
+  "S152tx": { 
+    longURL: "https://www.tsn.ca/", 
+    userID: "userRandomID"}
 };
 
 //userDatabase with two test entries - not persistent over server resets
@@ -256,7 +264,7 @@ app.get("/urls/new", (req, res) => {
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[`${req.params.shortURL}`];
+  const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"]
   res.redirect(longURL);
 });
 
@@ -264,15 +272,12 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[`${req.params.shortURL}`],
+    longURL: urlDatabase[`${req.params.shortURL}`].longURL,
     user_id: req.cookies["user_id"],
     userEmail: checkUserId(req.cookies['user_id'])
   };
-  if (!isLoggedIn(req)){
-    res.render("login", templateVars);
-  } else {
+
     res.render("urls_show", templateVars);
-  }
 });
 
 //handles a deletion request using the delete button on urls/ route
@@ -283,7 +288,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //updates an existing entries long URL redirects the user to /urls
 app.post("/urls/:shortURL/update", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.longURL;
+  urlDatabase[req.params.shortURL] = { longURL : req.body.longURL, userID: req.cookies.user_id };
   console.log(urlDatabase);
   res.redirect("/urls");
 });
@@ -292,8 +297,9 @@ app.post("/urls/:shortURL/update", (req, res) => {
 app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
-  urlDatabase[shortURL] = req.body.longURL; //send the new shortURL and longURL to urlDatabase
-  // console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
+  console.log(req.body.longURL)
+  urlDatabase[shortURL] = { longURL : req.body.longURL, userID: req.cookies.user_id }; //send the new shortURL and longURL to urlDatabase
+  console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
 
