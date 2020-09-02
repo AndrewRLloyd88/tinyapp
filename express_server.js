@@ -7,11 +7,19 @@ const cookieParser = require('cookie-parser');
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 //generate 10 salt rounds
-const salt = bcrypt.genSalt(10);
+const salt = bcrypt.genSaltSync(10);
+const cookieSession = require('cookie-session')
 
 // const password = "purple-monkey-dinosaur"; // found in the req.params object
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ["10987654321ABC123"],
+  maxAge: 24 * 60 * 60 * 1000 //24 hours
+}));
+
 // set the view engine to ejs
 app.set("view engine", "ejs");
 
@@ -26,9 +34,9 @@ const generateRandomString = () => {
   // const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const randomID = uuid.v4().substr(0, 6);
   // for (let i = 0; i < 6; i++) {
-    //use round to generate a number that can round up to between 0 and characters.length
-    // const randomNum = Math.floor(Math.random() * characters.length);
-    // tinyURL = 
+  //use round to generate a number that can round up to between 0 and characters.length
+  // const randomNum = Math.floor(Math.random() * characters.length);
+  // tinyURL = 
   // }
   return randomID;
 };
@@ -54,12 +62,12 @@ const userDatabase = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
+    password: bcrypt.hashSync("purple-monkey-dinosaur", salt)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: bcrypt.hashSync("dishwasher-funk", 10)
+    password: bcrypt.hashSync("dishwasher-funk", salt)
   }
 };
 
@@ -95,8 +103,8 @@ const emailLookup = (email) => {
 const passwordCheck = (password) => {
   for (const users in userDatabase) {
     //does the submitted email match an email in our db?
-    if(bcrypt.compareSync(password, userDatabase[users].password )) {
-    // if (password === userDatabase[users].password) {
+    if (bcrypt.compareSync(password, userDatabase[users].password)) {
+      // if (password === userDatabase[users].password) {
       return true;
     }
   }
@@ -115,7 +123,7 @@ const checkFieldsPopulated = (email, password) => {
 //checks what value req.cookies.user_id is. If undefined user !== logged in
 const isLoggedIn = (req) => {
 
-  if (req.cookies.user_id === undefined) {
+  if (req === undefined) {
     return false;
   } else {
     return true;
@@ -138,8 +146,9 @@ const urlsForUser = (id) => {
 
 //checks the incoming request from a user to make sure they own that url.
 //Stops users editing other users shortURLS if they dont own it.
+                               // req.session.id
 const checkUserOwnsURL = (id, request) => {
-  // console.log("request: " + request)
+  console.log("request: " + id, request)
   for (const urls in urlDatabase) {
     if (urlDatabase[request].userID !== id) {
       // console.log(request.user_id + " " + "in checkUserOwnsUrl")
@@ -171,7 +180,7 @@ const checkUserOwnsURL = (id, request) => {
 
 //displays login page
 app.get("/login", (req, res) => {
-  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
+  let templateVars = { user_id: req.session.id, userEmail: checkUserId(req.session.id) };
   res.render('login', templateVars);
 });
 
@@ -191,8 +200,8 @@ app.post("/login", (req, res) => {
     //refactor this logic
     for (const users in userDatabase) {
       if (req.body.email === userDatabase[users].email) {
-        res.cookie("user_id", userDatabase[users].id);
-        userURLS = urlsForUser(req.cookies.user_id);
+        req.session.id = userDatabase[users].id;
+        userURLS = urlsForUser(req.session.id);
       }
     }
 
@@ -203,7 +212,7 @@ app.post("/login", (req, res) => {
 //handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
   //set the user_id cookie to an empty string on logout
-  res.clearCookie("user_id");
+  req.session = null;
   userURLS = {};
   res.redirect("/login");
 });
@@ -211,7 +220,7 @@ app.post("/logout", (req, res) => {
 //displays the register page
 app.get("/register", (req, res) => {
   //change template Vars to use user ID now
-  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
+  let templateVars = { user_id: req.session.id, userEmail: checkUserId(req.session.id) };
   res.render("register", templateVars);
 });
 
@@ -226,9 +235,12 @@ app.post("/register", (req, res) => {
     res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
-    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
     //generate a random userID
     let id = generateRandomString();
+    //we are setting an encrypted cookie using the users id
+    req.session.id = id;
+
     //implement a loop to check if userID/email exists?
     //store user in userDB
     userDatabase[id] = {
@@ -237,7 +249,7 @@ app.post("/register", (req, res) => {
       password: hashedPassword
     };
     //cookies now use randomly generated userID
-    res.cookie("user_id", id);
+    console.log(id)
     console.log(userDatabase); //log userDB to see if user was added OK
     res.redirect("urls");
   }
@@ -256,13 +268,13 @@ app.get("/", (req, res) => {
 app.get("/urls.json", (req, res) => {
   let templateVars = {
     urls: urlDatabase,
-    user_id: req.cookies["user_id"],
-    userEmail: checkUserId(req.cookies['user_id'])
+    user_id: req.session.id,
+    userEmail: checkUserId(req.session.id)
     //any other vars
   };
 
   //base code to check if a cookie exists
-  if (req.cookies.user_id === undefined) {
+  if (req.session.id === null) {
     // console.log("I am not logged in as a user")
     res.render("login", templateVars);
   } else {
@@ -275,18 +287,17 @@ app.get("/urls.json", (req, res) => {
 
 //displays the current url database
 app.get("/urls", (req, res) => {
-
-  urlsForUser(req.cookies.user_id);
+  urlsForUser(req.session.id);
 
   let templateVars = {
     urls: userURLS,
-    user_id: req.cookies["user_id"],
-    userEmail: checkUserId(req.cookies['user_id'])
+    user_id: req.session.id,
+    userEmail: checkUserId(req.session.id)
     //any other vars
   };
 
 
-  if (!isLoggedIn(req)) {
+  if (!isLoggedIn(req.session.id)) {
     res.render("login", templateVars);
   } else {
 
@@ -297,9 +308,9 @@ app.get("/urls", (req, res) => {
 
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
+  let templateVars = { user_id: req.session.id, userEmail: checkUserId(req.session.id) };
 
-  if (!isLoggedIn(req)) {
+  if (!isLoggedIn(req.session.id)) {
     res.render("login", templateVars);
   } else {
     res.render("urls_new", templateVars);
@@ -317,8 +328,8 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[`${req.params.shortURL}`].longURL,
-    user_id: req.cookies["user_id"],
-    userEmail: checkUserId(req.cookies['user_id'])
+    user_id: req.session.id,
+    userEmail: checkUserId(req.session.id)
   };
 
   res.render("urls_show", templateVars);
@@ -326,9 +337,9 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //handles a deletion request using the delete button on urls/ route
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!isLoggedIn(req)) {
+  if (!isLoggedIn(req.session.id)) {
     res.sendStatus(403);
-  } else if (!checkUserOwnsURL(req.cookies.user_id)) {
+  } else if (!checkUserOwnsURL(req.session.id, req.params.shortURL)) {
     res.sendStatus(403);
   } else {
     delete urlDatabase[`${req.params.shortURL}`];
@@ -339,14 +350,14 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //updates an existing entries long URL redirects the user to /urls
 app.post("/urls/:shortURL/update", (req, res) => {
   //is the user logged in?
-  if (!isLoggedIn(req)) {
+  if (!isLoggedIn(req.session.id)) {
     res.sendStatus(403);
-  } else if (!checkUserOwnsURL(req.cookies.user_id, req.params.shortURL)) {
+  } else if (!checkUserOwnsURL(req.session.id, req.params.shortURL)) {
     // console.log(req.cookies.user_id)
     // console.log()
     res.sendStatus(403);
   } else {
-    urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.cookies.user_id };
+    urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.session.id };
     console.log(urlDatabase);
     res.redirect("/urls");
 
@@ -358,7 +369,10 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
   console.log(req.body.longURL);
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies.user_id }; //send the new shortURL and longURL to urlDatabase
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.session.id
+  }; //send the new shortURL and longURL to urlDatabase
   console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
 });
