@@ -122,7 +122,6 @@ const checkFieldsPopulated = (email, password) => {
 
 //checks what value req.cookies.user_id is. If undefined user !== logged in
 const isLoggedIn = (req) => {
-
   if (req === undefined) {
     return false;
   } else {
@@ -146,7 +145,7 @@ const urlsForUser = (id) => {
 
 //checks the incoming request from a user to make sure they own that url.
 //Stops users editing other users shortURLS if they dont own it.
-                               // req.session.id
+// req.session.id
 const checkUserOwnsURL = (id, request) => {
   console.log("request: " + id, request)
   for (const urls in urlDatabase) {
