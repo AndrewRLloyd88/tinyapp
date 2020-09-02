@@ -44,7 +44,7 @@ const userDatabase = {
 //test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
-//checks user_id cookie and sees if there is a matching userID in the database.
+//checks user_id cookie and sees if there is a matching userID in the database. --refactor these functions
 const checkUserId = (cookie) => {
   if (cookie !== "") {
     for (const users in userDatabase) {
@@ -58,7 +58,7 @@ const checkUserId = (cookie) => {
   }
 };
 
-//checks we are not duplicating creation of username by checking email
+//checks we are not duplicating creation of username by checking email --refactor these functions
 const emailLookup = (email) => {
   for (const users in userDatabase) {
     //does the submitted email match an email in our db?
@@ -68,6 +68,27 @@ const emailLookup = (email) => {
   }
   return false;
 };
+
+//checks if password matches password stored in userDB  -- refactor these functions
+const passwordCheck = (password) => {
+  for (const users in userDatabase) {
+    //does the submitted email match an email in our db?
+    if (password === userDatabase[users].password) {
+      return true;
+    }
+  }
+  return false;
+}
+
+//checks if fields are empty -- refactor this check
+const checkFieldsPopulated = (email, password) => {
+  if (email === "" && password === "") {
+    //send a 400 error - Bad Request
+    return false;
+  }
+  return true;
+}
+
 
 // Edge cases
 
@@ -86,15 +107,28 @@ const emailLookup = (email) => {
 //route that handles login button and sets cookie users name
 
 
-
+//displays login page
 app.get("/login", (req, res) => {
   let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
   res.render('login', templateVars);
 })
 
-
+//handles login requests
 app.post("/login", (req, res) => {
+  //are our login fields populated?
+  if(!checkFieldsPopulated(req.body.email, req.body.password)){
+    res.sendStatus(400);
+  }
+  //does email match an email on our db?
+  else if(!emailLookup(req.body.email)){
+    res.sendStatus(403);
+  }
+  //does the password match?
+  else if(!passwordCheck(req.body.password)){
+    res.sendStatus(403);
+  } else {
   //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
+  //refactor this logic
   for (const users in userDatabase) {
     if (req.body.email === userDatabase[users].email) {
       res.cookie("user_id", userDatabase[users].id);
@@ -102,16 +136,17 @@ app.post("/login", (req, res) => {
   }
 
   res.redirect("/urls");
+}
 });
 
 
 
 
-//route that handles logout button and resets cookie to "" when user logs out
+//andles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
   //set the user_id cookie to an empty string on logout
   res.cookie("user_id", "");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 //displays the register page
@@ -129,7 +164,7 @@ app.post("/register", (req, res) => {
     res.sendStatus(400);
   }
   //check if someone tries to register an already registered email address
-  if (emailLookup(req.body.email)) {
+  else if (emailLookup(req.body.email)) {
     res.sendStatus(400);
   } else {
 
