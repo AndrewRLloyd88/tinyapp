@@ -9,6 +9,8 @@ app.use(cookieParser());
 app.set("view engine", "ejs");
 
 
+let userURLS = {};
+
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
 const generateRandomString = () => {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -109,6 +111,20 @@ const isLoggedIn = (req) => {
 }
 
 
+//returns the URLs where the userID is equal to the field of the currently logged in user
+const urlsForUser = (id) => {
+  //remember to clear userURLS
+  userURLS = {}
+  for(const url in urlDatabase){
+    if(id === urlDatabase[url].userID) { 
+      userURLS[url] = urlDatabase[url].longURL}
+    }
+    console.log(userURLS)
+    return userURLS;
+  }
+
+
+
 // Edge cases
 
 // What would happen if a client requests a non-existent shortURL?
@@ -152,9 +168,10 @@ app.post("/login", (req, res) => {
     for (const users in userDatabase) {
       if (req.body.email === userDatabase[users].email) {
         res.cookie("user_id", userDatabase[users].id);
+        userURLS = urlsForUser(req.cookies.user_id)
       }
     }
-
+    
     res.redirect("/urls");
   }
 });
@@ -163,6 +180,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   //set the user_id cookie to an empty string on logout
   res.clearCookie("user_id");
+  userURLS = {}
   res.redirect("/login");
 });
 
@@ -234,9 +252,10 @@ app.get("/urls.json", (req, res) => {
 //displays the current url database
 app.get("/urls", (req, res) => {
 
+  urlsForUser(req.cookies.user_id)
 
   let templateVars = {
-    urls: urlDatabase,
+    urls: userURLS,
     user_id: req.cookies["user_id"],
     userEmail: checkUserId(req.cookies['user_id'])
     //any other vars
@@ -246,8 +265,8 @@ app.get("/urls", (req, res) => {
   if (!isLoggedIn(req)) {
     res.render("login", templateVars);
   } else {
-    console.log(templateVars.user_id)
-
+    
+    
     res.render("urls_index", templateVars);
   }
 });
