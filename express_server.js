@@ -8,6 +8,7 @@ app.use(cookieParser());
 // set the view engine to ejs
 app.set("view engine", "ejs");
 
+
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
 const generateRandomString = () => {
   const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -89,6 +90,16 @@ const checkFieldsPopulated = (email, password) => {
   return true;
 }
 
+//checks what value req.cookies.user_id is. If undefined user !== logged in
+const isLoggedIn = (req) => {
+
+  if (req.cookies.user_id === undefined) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 
 // Edge cases
 
@@ -102,7 +113,8 @@ const checkFieldsPopulated = (email, password) => {
 //Routes
 
 ///////////////////////////////////
-//user management specific routes//
+//user management specific routes
+//---------------------------------
 ///////////////////////////////////
 //route that handles login button and sets cookie users name
 
@@ -116,36 +128,33 @@ app.get("/login", (req, res) => {
 //handles login requests
 app.post("/login", (req, res) => {
   //are our login fields populated?
-  if(!checkFieldsPopulated(req.body.email, req.body.password)){
+  if (!checkFieldsPopulated(req.body.email, req.body.password)) {
     res.sendStatus(400);
   }
   //does email match an email on our db?
-  else if(!emailLookup(req.body.email)){
+  else if (!emailLookup(req.body.email)) {
     res.sendStatus(403);
   }
   //does the password match?
-  else if(!passwordCheck(req.body.password)){
+  else if (!passwordCheck(req.body.password)) {
     res.sendStatus(403);
   } else {
-  //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
-  //refactor this logic
-  for (const users in userDatabase) {
-    if (req.body.email === userDatabase[users].email) {
-      res.cookie("user_id", userDatabase[users].id);
+    //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
+    //refactor this logic
+    for (const users in userDatabase) {
+      if (req.body.email === userDatabase[users].email) {
+        res.cookie("user_id", userDatabase[users].id);
+      }
     }
-  }
 
-  res.redirect("/urls");
-}
+    res.redirect("/urls");
+  }
 });
 
-
-
-
-//andles logout button and resets cookie to "" when user logs out
+//handles logout button and resets cookie to "" when user logs out
 app.post("/logout", (req, res) => {
   //set the user_id cookie to an empty string on logout
-  res.cookie("user_id", "");
+  res.clearCookie("user_id");
   res.redirect("/login");
 });
 
@@ -185,7 +194,9 @@ app.post("/register", (req, res) => {
 });
 
 
-
+////////////////
+///GET ROUTES///
+////////////////
 //Test home route - currently using to experiment with objects as I learn
 app.get("/", (req, res) => {
   res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
@@ -193,24 +204,54 @@ app.get("/", (req, res) => {
 
 //added through duration of the work - shows tinyURLS and largeURLS in JSON format
 app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-//displays the current url database
-app.get("/urls", (req, res) => {
   let templateVars = {
     urls: urlDatabase,
     user_id: req.cookies["user_id"],
     userEmail: checkUserId(req.cookies['user_id'])
     //any other vars
   };
-  res.render("urls_index", templateVars);
+
+  //base code to check if a cookie exists
+  if (req.cookies.user_id === undefined) {
+    // console.log("I am not logged in as a user")
+    res.render("login", templateVars);
+  } else {
+    // if !loggedIn{
+    //   res.sendStatus(403);
+    // } else {
+    res.json(urlDatabase);
+  }
+});
+
+//displays the current url database
+app.get("/urls", (req, res) => {
+
+
+  let templateVars = {
+    urls: urlDatabase,
+    user_id: req.cookies["user_id"],
+    userEmail: checkUserId(req.cookies['user_id'])
+    //any other vars
+  };
+
+
+  if (!isLoggedIn(req)) {
+    res.render("login", templateVars);
+  } else {
+
+    res.render("urls_index", templateVars);
+  }
 });
 
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
   let templateVars = { user_id: req.cookies["user_id"], userEmail: checkUserId(req.cookies['user_id']) };
-  res.render("urls_new", templateVars);
+
+  if (!isLoggedIn(req)) {
+    res.render("login", templateVars);
+  } else {
+    res.render("urls_new", templateVars);
+  }
 });
 
 //handles a redirect from the u/shortURL to the full longURL
@@ -227,7 +268,11 @@ app.get("/urls/:shortURL", (req, res) => {
     user_id: req.cookies["user_id"],
     userEmail: checkUserId(req.cookies['user_id'])
   };
-  res.render("urls_show", templateVars);
+  if (!isLoggedIn(req)){
+    res.render("login", templateVars);
+  } else {
+    res.render("urls_show", templateVars);
+  }
 });
 
 //handles a deletion request using the delete button on urls/ route
