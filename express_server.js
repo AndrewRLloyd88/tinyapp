@@ -29,7 +29,7 @@ const urlDatabase = {
   },
   "9sm5xK": { 
     longURL: "http://www.google.com", 
-    userID: "userRandomID" 
+    userID: "user2RandomID" 
   },
   "S152tx": { 
     longURL: "https://www.tsn.ca/", 
@@ -246,6 +246,7 @@ app.get("/urls", (req, res) => {
   if (!isLoggedIn(req)) {
     res.render("login", templateVars);
   } else {
+    console.log(templateVars.user_id)
 
     res.render("urls_index", templateVars);
   }
