@@ -302,15 +302,23 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //handles a deletion request using the delete button on urls/ route
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[`${req.params.shortURL}`];
-  res.redirect("/urls");
+  if (!isLoggedIn(req)) {
+    res.sendStatus(403);
+  } else {
+    delete urlDatabase[`${req.params.shortURL}`];
+    res.redirect("/urls");
+  }
 });
 
 //updates an existing entries long URL redirects the user to /urls
 app.post("/urls/:shortURL/update", (req, res) => {
+  if (!isLoggedIn(req)) {
+    res.sendStatus(403);
+  } else {
   urlDatabase[req.params.shortURL] = { longURL : req.body.longURL, userID: req.cookies.user_id };
   console.log(urlDatabase);
   res.redirect("/urls");
+  }
 });
 
 //generates new tinyURL with a random shortURL using the generateRandomString() function
