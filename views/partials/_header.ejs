@@ -19,15 +19,15 @@
       </form>
       <% } else{ %>  
         <div style="display: flex; justify-content: flex-end; align-items: center;">
+          <form action="/login" method="get" style="display: flex; justify-content: flex-end;">
+          </div>
+          <button class="btn btn-outline-dark" style="margin-right: 10px;">Login</button>
+        </form>
+        <div style="display: flex; justify-content: flex-end; align-items: center;">
           <form action="/register" method="get" style="display: flex; justify-content: flex-end;">
           </div>
-            <button class="btn btn-outline-dark" style="margin-right: 10px;">Register</button>
+            <button class="btn btn-outline-dark">Register</button>
           </form>
-          <div style="display: flex; justify-content: flex-end; align-items: center;">
-            <form action="/login" method="get" style="display: flex; justify-content: flex-end;">
-            </div>
-              <button class="btn btn-outline-dark">Login</button>
-            </form>
      <% } %>
     </nav>
   </header>

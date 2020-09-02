@@ -58,7 +58,7 @@ const checkUserId = (cookie) => {
   }
 };
 
-//checks we are not duplicating creation of username by checking email --refactor these functions
+//check we are not creating duplicate users by checking req.body.email against db --refactor these functions
 const emailLookup = (email) => {
   for (const users in userDatabase) {
     //does the submitted email match an email in our db?
