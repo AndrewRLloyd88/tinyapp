@@ -69,7 +69,8 @@ const getUrlsForUser = (id) => {
       userURLS[url] = {
         longURL: urlDatabase[url].longURL,
         dateCreated: urlDatabase[url].dateCreated,
-        hits: urlDatabase[url].hits
+        hits: urlDatabase[url].hits,
+        views: urlDatabase[url].urlViews
       }
     }
   }

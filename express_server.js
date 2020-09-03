@@ -194,6 +194,7 @@ app.get("/u/:shortURL", (req, res) => {
   req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || urlDatabase[`${req.params.shortURL}`].hits) + 1
   //checking our counter for individual clicks
   console.log(req.session[`${req.params.shortURL}`])
+  //add the cookies count to our hits: key in urlDatabase
   urlDatabase[`${req.params.shortURL}`].hits = req.session[`${req.params.shortURL}`]
   console.log(urlDatabase)
   res.redirect(longURL);
@@ -201,10 +202,15 @@ app.get("/u/:shortURL", (req, res) => {
 
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
-  console.log(req.params.shortURL);
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
+  //setting a cookie to track number of times /urls/tinyURL is visited
+  req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || 0) + 1
+  console.log(req.session[`${req.params.shortURL}_views`])
+  //adds the cookies counter to our :urlViews key in userDB
+  urlDatabase[`${req.params.shortURL}`].urlViews = req.session[`${req.params.shortURL}_views`]
+
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
@@ -233,10 +239,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL/update", (req, res) => {
   //is the user logged in?
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    console.log("i dont login")
     res.sendStatus(403);
   } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
-    console.log("i dont own the url")
     res.sendStatus(403);
   } else {
 
@@ -286,7 +290,8 @@ app.post("/urls", (req, res) => {
       longURL: longURL,
       userID: req.session.id,
       dateCreated: helpers.getTodaysDate(),
-      hits: 0
+      hits: 0,
+      urlViews: 0
     }; //send the new shortURL and longURL to urlDatabase
     res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
   });
