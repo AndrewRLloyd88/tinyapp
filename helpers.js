@@ -104,16 +104,25 @@ const generateRandomString = () => {
   return randomID;
 };
 
+const getTodaysDate = () => {
+  const todaysDate = new Date();
+  const date = todaysDate.getDate();
+  const month = todaysDate.getMonth() + 1; // Since getMonth() returns 
+  const year = todaysDate.getFullYear();
+  return date + "/" + month + "/" + year;
+}
+
 module.exports = {
   checkUserId,
-    getUserByEmail,
-    passwordCheck,
-    checkFieldsPopulated,
-    checkIsLoggedIn,
-    getUrlsForUser,
-    checkUserOwnsURL,
-    checkUrlExists,
-    insertCharsAt,
-    generateRandomString
+  getUserByEmail,
+  passwordCheck,
+  checkFieldsPopulated,
+  checkIsLoggedIn,
+  getUrlsForUser,
+  checkUserOwnsURL,
+  checkUrlExists,
+  insertCharsAt,
+  generateRandomString,
+  getTodaysDate
 
 }

@@ -244,7 +244,11 @@ app.post("/urls/:shortURL/update", (req, res) => {
     longURL = helpers.insertCharsAt(longURL, 0, "www.")
   } 
 
-    urlDatabase[req.params.shortURL] = { longURL: longURL, userID: req.session.id };
+    urlDatabase[req.params.shortURL] = { 
+      longURL: longURL, 
+      userID: req.session.id,
+      dateCreated: helpers.getTodaysDate()
+    };
     console.log(urlDatabase);
     res.redirect("/urls");
   }
@@ -272,7 +276,8 @@ app.post("/urls", (req, res) => {
     //add to the urlDatabase
     urlDatabase[shortURL] = {
       longURL: longURL,
-      userID: req.session.id
+      userID: req.session.id,
+      dateCreated: helpers.getTodaysDate()
     }; //send the new shortURL and longURL to urlDatabase
     res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
   });
