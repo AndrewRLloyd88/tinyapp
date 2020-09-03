@@ -185,10 +185,17 @@ app.get("/urls/new", (req, res) => {
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
+  shortURL = req.params.shortURL
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
   const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"];
+  //cookie to track shortURL unique visits
+  req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || 0) + 1
+  //checking our counter for individual clicks
+  console.log(req.session[`${req.params.shortURL}`])
+  urlDatabase[`${req.params.shortURL}`].views = req.session[`${req.params.shortURL}`]
+  console.log(urlDatabase)
   res.redirect(longURL);
 });
 
@@ -277,7 +284,8 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = {
       longURL: longURL,
       userID: req.session.id,
-      dateCreated: helpers.getTodaysDate()
+      dateCreated: helpers.getTodaysDate(),
+      views: 0
     }; //send the new shortURL and longURL to urlDatabase
     res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
   });
