@@ -191,7 +191,7 @@ app.get("/u/:shortURL", (req, res) => {
   }
   const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"];
   //cookie to track shortURL unique visits
-  req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || 0) + 1
+  req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || urlDatabase[`${req.params.shortURL}`].hits) + 1
   //checking our counter for individual clicks
   console.log(req.session[`${req.params.shortURL}`])
   urlDatabase[`${req.params.shortURL}`].hits = req.session[`${req.params.shortURL}`]
