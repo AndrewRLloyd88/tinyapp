@@ -53,6 +53,10 @@ app.get("/login", (req, res) => {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
+
+  if (helpers.checkIsLoggedIn(req.session.id)) {
+    return res.redirect("/urls")
+  } 
   res.render('login', templateVars);
 });
 
@@ -92,11 +96,16 @@ app.get("/register", (req, res) => {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
+
+  if (helpers.checkIsLoggedIn(req.session.id)) {
+    return res.redirect("/urls")
+  } 
   res.render("register", templateVars);
 });
 
 //handles a new user registration
 app.post("/register", (req, res) => {
+  
   const { email, password } = req.body;
   //check if req.body.email or req.body.password are not blank
   if (!helpers.checkFieldsPopulated(email, password)) {
