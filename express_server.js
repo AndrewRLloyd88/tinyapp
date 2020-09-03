@@ -194,7 +194,7 @@ app.get("/u/:shortURL", (req, res) => {
   req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || 0) + 1
   //checking our counter for individual clicks
   console.log(req.session[`${req.params.shortURL}`])
-  urlDatabase[`${req.params.shortURL}`].views = req.session[`${req.params.shortURL}`]
+  urlDatabase[`${req.params.shortURL}`].hits = req.session[`${req.params.shortURL}`]
   console.log(urlDatabase)
   res.redirect(longURL);
 });
@@ -254,7 +254,8 @@ app.post("/urls/:shortURL/update", (req, res) => {
     urlDatabase[req.params.shortURL] = { 
       longURL: longURL, 
       userID: req.session.id,
-      dateCreated: helpers.getTodaysDate()
+      dateCreated: helpers.getTodaysDate(),
+      hits: urlDatabase[req.params.shortURL].hits
     };
     console.log(urlDatabase);
     res.redirect("/urls");
@@ -285,7 +286,7 @@ app.post("/urls", (req, res) => {
       longURL: longURL,
       userID: req.session.id,
       dateCreated: helpers.getTodaysDate(),
-      views: 0
+      hits: 0
     }; //send the new shortURL and longURL to urlDatabase
     res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
   });

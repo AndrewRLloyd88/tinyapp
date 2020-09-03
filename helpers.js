@@ -68,7 +68,8 @@ const getUrlsForUser = (id) => {
       //assign any found to UserURLS as {shorURL : LongURL}
       userURLS[url] = {
         longURL: urlDatabase[url].longURL,
-        dateCreated: urlDatabase[url].dateCreated
+        dateCreated: urlDatabase[url].dateCreated,
+        hits: urlDatabase[url].hits
       }
     }
   }
