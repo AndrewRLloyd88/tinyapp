@@ -206,11 +206,11 @@ app.get("/urls/:shortURL", (req, res) => {
     return res.sendStatus(404);
   }
   //setting a cookie to track number of times /urls/tinyURL is visited
-  req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || 0) + 1
+  req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1
   console.log(req.session[`${req.params.shortURL}_views`])
   //adds the cookies counter to our :urlViews key in userDB
   urlDatabase[`${req.params.shortURL}`].urlViews = req.session[`${req.params.shortURL}_views`]
-
+  console.log(urlDatabase)
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
@@ -218,7 +218,9 @@ app.get("/urls/:shortURL", (req, res) => {
     shortURL: req.params.shortURL,
     longURL: longURL,
     user_id: req.session.id,
-    userEmail: helpers.checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id),
+    views: urlDatabase[`${req.params.shortURL}`].urlViews,
+    hits: urlDatabase[`${req.params.shortURL}`].hits
   };
   res.render("urls_show", templateVars);
 });
@@ -244,7 +246,7 @@ app.post("/urls/:shortURL/update", (req, res) => {
     res.sendStatus(403);
   } else {
 
-    longURL = req.body.longURL
+    let longURL = req.body.longURL
 
     if(!longURL.includes("http://") && !longURL.includes("www")) {
     console.log("adding http://www")
@@ -259,7 +261,8 @@ app.post("/urls/:shortURL/update", (req, res) => {
       longURL: longURL, 
       userID: req.session.id,
       dateCreated: helpers.getTodaysDate(),
-      hits: urlDatabase[req.params.shortURL].hits
+      hits: urlDatabase[req.params.shortURL].hits,
+      urlViews: urlDatabase[`${req.params.shortURL}`].urlViews
     };
     console.log(urlDatabase);
     res.redirect("/urls");
