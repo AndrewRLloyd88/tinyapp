@@ -4,8 +4,10 @@ const morgan = require('morgan');
 const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const uuid = require('uuid');
 const bcrypt = require('bcrypt');
+const helpers = require('./helpers');
+const urlDatabase = require('./urlDatabase');
+const userDatabase = require('./userDatabase')
 //generate 10 salt rounds
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
@@ -30,139 +32,14 @@ app.use(morgan('short'));
 //keeps track of URLS belonging to the specific user logged in, populated by checking userID against userDB shortURL ids.
 let userURLS = {};
 
-//returns 6 random characters from characters and associates the new tinyURL to a longURL
-const generateRandomString = () => {
-  const randomID = uuid.v4().substr(0, 6);
-  return randomID;
-};
-
-//database is not yet persistent when server restarts
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "userRandomID"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "user2RandomID"
-  },
-  "S152tx": {
-    longURL: "https://www.tsn.ca/",
-    userID: "userRandomID"
-  }
-};
-
-// userDatabase["foundUser"].password
-//userDatabase with two test entries - not persistent over server resets
-const userDatabase = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync("purple-monkey-dinosaur", salt)
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync("dishwasher-funk", salt)
-  }
-};
-
 //test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
-//checks user_id cookie and sees if there is a matching userID in the database. --refactor these functions
-const checkUserId = (cookie) => {
-  if (cookie !== "") {
-    for (const users in userDatabase) {
-      if (cookie === userDatabase[users].id) {
-        //return users email to use in the header partial
-        return userDatabase[users].email;
-      }
-    }
-  } else {
-    return undefined;
-  }
-};
 
-//check we are not creating duplicate users by checking req.body.email against db --refactor these functions
-const getUserByEmail = (email, database) => {
-  for (const users in userDatabase) {
-    //does the submitted email match an email in our db?
-    if (email === userDatabase[users].email) {
-      const foundUser = users;
-      return foundUser;
-    }
-  }
-  return false;
-};
-
-//checks if password matches password stored in userDB  -- refactor these functions
-const passwordCheck = (password, foundUser) => {
-  if (!foundUser) {
-    return false;
-  }
-  //does the submitted email match an email in our db?
-  if (bcrypt.compareSync(password, userDatabase[foundUser].password)) {
-    return foundUser;
-  }
-  return false;
-};
-
-//checks if fields are empty -- refactor this check
-const checkFieldsPopulated = (email, password) => {
-  if (email === "" || password === "") {
-    //send a 400 error - Bad Request
-    return false;
-  }
-  return true;
-};
-
-//checks what value req.cookies.user_id is. If undefined user !== logged in
-const isLoggedIn = (req) => {
-  if (req === undefined) {
-    return false;
-  } else {
-    return true;
-  }
-};
-
-//grabs the urls associated with the logged in users id
-const urlsForUser = (id) => {
-  userURLS = {};
-  for (const url in urlDatabase) {
-    //does the user own any urls in our database?
-    if (id === urlDatabase[url].userID) {
-      //assign any found to UserURLS as {shorURL : LongURL}
-      userURLS[url] = urlDatabase[url].longURL;
-    }
-  }
-  return userURLS;
-};
-
-//checks if the user owns the url they are requesting to delete or change
-const checkUserOwnsURL = (id, request) => {
-  console.log("request: " + id, request);
-    if (urlDatabase[request].userID !== id) {
-      return false;
-    } else {
-      return true;
-    }
-  };
-
-const checkUrlExists = (req) => {
-  console.log(req);
-  for (const urls in urlDatabase) {
-    console.log(urls);
-    if (req === urls) {
-      return true;
-    }
-  }
-  return false;
-};
 
 // Edge cases
 //What would happen if a client requests a non-existent shortURL?
-//timeout because the resource has been found but it cant re-direct to anything.
+//attempt to fix in
 
 
 ///////////////////////////////////////////
@@ -174,7 +51,7 @@ const checkUrlExists = (req) => {
 app.get("/login", (req, res) => {
   let templateVars = {
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
   res.render('login', templateVars);
 });
@@ -184,20 +61,20 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   //are our login fields populated?
-  if (!checkFieldsPopulated(email, password)) {
+  if (!helpers.checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
   }
   //check if we can find a matching user
-  const foundUser = getUserByEmail(email);
+  const foundUser = helpers.getUserByEmail(email);
   if (foundUser === null || foundUser === undefined) {
     res.sendStatus(403);
   }
   //does the password match?
-  if (!passwordCheck(password, foundUser)) {
+  if (!helpers.passwordCheck(password, foundUser)) {
     res.sendStatus(403);
   } else {
     req.session.id = userDatabase[foundUser].id;
-    userURLS = urlsForUser(req.session.id);
+    userURLS = helpers.getUrlsForUser(req.session.id);
     res.redirect("/urls");
   }
 });
@@ -213,7 +90,7 @@ app.post("/logout", (req, res) => {
 app.get("/register", (req, res) => {
   let templateVars = {
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
   res.render("register", templateVars);
 });
@@ -222,16 +99,16 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
   //check if req.body.email or req.body.password are not blank
-  if (!checkFieldsPopulated(email, password)) {
+  if (!helpers.checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
     //check if someone is already registered
-  } else if (getUserByEmail(email)) {
+  } else if (helpers.getUserByEmail(email)) {
     res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
     const hashedPassword = bcrypt.hashSync(password, salt);
     //generate a random userID using UUID/v4
-    let id = generateRandomString();
+    let id = helpers.generateRandomString();
     //set an encrypted cookie for the user session.id
     req.session.id = id;
 
@@ -265,7 +142,7 @@ app.get("/urls.json", (req, res) => {
   let templateVars = {
     urls: urlDatabase,
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
 
   if (req.session.id === null || !req.session.id) {
@@ -277,15 +154,15 @@ app.get("/urls.json", (req, res) => {
 
 //displays the current url database
 app.get("/urls", (req, res) => {
-  urlsForUser(req.session.id);
+  userURLS = helpers.getUrlsForUser(req.session.id);
 
   let templateVars = {
     urls: userURLS,
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
 
-  if (!isLoggedIn(req.session.id)) {
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
     res.render("login", templateVars);
   } else {
     res.render("urls_index", templateVars);
@@ -296,10 +173,10 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   let templateVars = {
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
 
-  if (!isLoggedIn(req.session.id)) {
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
     res.render("login", templateVars);
   } else {
     res.render("urls_new", templateVars);
@@ -308,7 +185,7 @@ app.get("/urls/new", (req, res) => {
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
-  if (!checkUrlExists(req.params.shortURL)) {
+  if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
   const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"];
@@ -318,26 +195,26 @@ app.get("/u/:shortURL", (req, res) => {
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
   console.log(req.params.shortURL);
-  if (!checkUrlExists(req.params.shortURL)) {
+  if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
-  
+
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: longURL,
     user_id: req.session.id,
-    userEmail: checkUserId(req.session.id)
+    userEmail: helpers.checkUserId(req.session.id)
   };
   res.render("urls_show", templateVars);
 });
 
 //allows logged in users to delete tinyURLs associated only with their account
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (!isLoggedIn(req.session.id)) {
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
     res.sendStatus(403);
-  } else if (!checkUserOwnsURL(req.session.id, req.params.shortURL)) {
+  } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
     res.sendStatus(403);
   } else {
     delete urlDatabase[`${req.params.shortURL}`];
@@ -348,14 +225,26 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 ///allows logged in users to update tinyURLs associated only with their account
 app.post("/urls/:shortURL/update", (req, res) => {
   //is the user logged in?
-  if (!isLoggedIn(req.session.id)) {
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
     console.log("i dont login")
     res.sendStatus(403);
-  } else if (!checkUserOwnsURL(req.session.id, req.params.shortURL)) {
+  } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
     console.log("i dont own the url")
     res.sendStatus(403);
   } else {
-    urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.session.id };
+
+    longURL = req.body.longURL
+
+    if(!longURL.includes("http://") && !longURL.includes("www")) {
+    console.log("adding http://www")
+    longURL = helpers.insertCharsAt(longURL, 0, "http://www.")
+  }
+  
+  if (!longURL.includes("www")) {
+    longURL = helpers.insertCharsAt(longURL, 0, "www.")
+  } 
+
+    urlDatabase[req.params.shortURL] = { longURL: longURL, userID: req.session.id };
     console.log(urlDatabase);
     res.redirect("/urls");
   }
@@ -363,20 +252,30 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 //generates new tinyURL with a random shortURL, given a unique id with generateRandomString()
 app.post("/urls", (req, res) => {
+  let longURL = req.body.longURL
   //stop people adding blank data via cURL POST request
-  if (!isLoggedIn(req.session.id)) {
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.sendStatus(403);
-  } else {
+  } 
+  //correcting Users urls if they just type website.com
+  if(!longURL.includes("http://") && !longURL.includes("www")) {
+    console.log("adding http://www")
+    longURL = helpers.insertCharsAt(longURL, 0, "http://www.")
+  }
+  
+  if (!longURL.includes("www")) {
+    longURL = helpers.insertCharsAt(longURL, 0, "www.")
+  } 
 
-  let shortURL = generateRandomString();
+    let shortURL = helpers.generateRandomString();
 
-  //add to the urlDatabase
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.session.id
-  }; //send the new shortURL and longURL to urlDatabase
-  res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
-}});
+    //add to the urlDatabase
+    urlDatabase[shortURL] = {
+      longURL: longURL,
+      userID: req.session.id
+    }; //send the new shortURL and longURL to urlDatabase
+    res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
+  });
 
 
 //server listen - opens the server up to listen for requests from user
