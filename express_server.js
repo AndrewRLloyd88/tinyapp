@@ -10,10 +10,11 @@ const bcrypt = require('bcrypt');
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session')
 
-// const password = "purple-monkey-dinosaur"; // found in the req.params object
+//settings for bodyParser
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+//settings for CookieSession
 app.use(cookieSession({
   name: 'session',
   keys: ["10987654321ABC123"],
@@ -31,13 +32,7 @@ let userURLS = {};
 
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
 const generateRandomString = () => {
-  // const characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const randomID = uuid.v4().substr(0, 6);
-  // for (let i = 0; i < 6; i++) {
-  //use round to generate a number that can round up to between 0 and characters.length
-  // const randomNum = Math.floor(Math.random() * characters.length);
-  // tinyURL = 
-  // }
   return randomID;
 };
 
@@ -57,6 +52,7 @@ const urlDatabase = {
   }
 };
 
+// userDatabase["foundUser"].password
 //userDatabase with two test entries - not persistent over server resets
 const userDatabase = {
   "userRandomID": {
@@ -74,6 +70,16 @@ const userDatabase = {
 //test array for use on "/" route - will become surplus to requirements later on
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
+
+//functions refactor
+
+const checkUserParams = (email, database) => {
+  for (const user in userDatabase) {
+
+  }
+}
+
+
 //checks user_id cookie and sees if there is a matching userID in the database. --refactor these functions
 const checkUserId = (cookie) => {
   if (cookie !== "") {
@@ -89,24 +95,28 @@ const checkUserId = (cookie) => {
 };
 
 //check we are not creating duplicate users by checking req.body.email against db --refactor these functions
-const emailLookup = (email) => {
+const getUserByEmail = (email, database) => {
   for (const users in userDatabase) {
     //does the submitted email match an email in our db?
     if (email === userDatabase[users].email) {
-      return true;
+      const foundUser = users;
+      console.log(foundUser + "in getUserByEmail")
+      return foundUser;
     }
   }
+  console.log("before false");
   return false;
 };
 
 //checks if password matches password stored in userDB  -- refactor these functions
-const passwordCheck = (password) => {
-  for (const users in userDatabase) {
-    //does the submitted email match an email in our db?
-    if (bcrypt.compareSync(password, userDatabase[users].password)) {
-      // if (password === userDatabase[users].password) {
-      return true;
-    }
+const passwordCheck = (password, foundUser) => {
+  console.log(`in passwordCheck foundUser is:  ${foundUser}`)
+  console.log(userDatabase["foundUser"])
+  //does the submitted email match an email in our db?
+  if (bcrypt.compareSync(password, userDatabase[foundUser].password)) {
+    // if (password === userDatabase[users].password) {
+
+    return foundUser;
   }
   return false;
 };
@@ -168,49 +178,47 @@ const checkUserOwnsURL = (id, request) => {
 // What type of status code do our redirects have? What does this status code mean?
 // 302 Found - This response code means that the URI of requested resource has been changed temporarily. Further changes in the URI might be made in the future. Therefore, this same URI should be used by the client in future requests.
 
-//Routes
 
-///////////////////////////////////
-//user management specific routes
-//---------------------------------
-///////////////////////////////////
-//route that handles login button and sets cookie users name
 
+///////////////////////////////////////////
+//user account management specific routes
+//-----------------------------------------
+///////////////////////////////////////////
 
 //displays login page
 app.get("/login", (req, res) => {
-  let templateVars = { user_id: req.session.id, userEmail: checkUserId(req.session.id) };
+  let templateVars = { 
+    user_id: req.session.id, 
+    userEmail: checkUserId(req.session.id) 
+  };
   res.render('login', templateVars);
 });
 
 //handles login requests
 app.post("/login", (req, res) => {
+  const { email, password } = req.body
+
   //are our login fields populated?
-  if (!checkFieldsPopulated(req.body.email, req.body.password)) {
+  if (!checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
-    //does email match an email on our db?
-  } else if (!emailLookup(req.body.email)) {
+  }
+  //check if we can find a matching user
+  const foundUser = getUserByEmail(email)
+  if (foundUser === null) {
     res.sendStatus(403);
-    //does the password match?
-  } else if (!passwordCheck(req.body.password)) {
+  }
+  //does the password match?
+  if (!passwordCheck(password, foundUser)) {
     res.sendStatus(403);
   } else {
-    //need to check all users to see if an email matches and if so set cookie to user_id : userDatabase[randomID]
-    //refactor this logic
-    for (const users in userDatabase) {
-      if (req.body.email === userDatabase[users].email) {
-        req.session.id = userDatabase[users].id;
-        userURLS = urlsForUser(req.session.id);
-      }
-    }
-
+    req.session.id = userDatabase[foundUser].id;
+    userURLS = urlsForUser(req.session.id);
     res.redirect("/urls");
   }
 });
 
-//handles logout button and resets cookie to "" when user logs out
+//clear cookies and userURLS on logout
 app.post("/logout", (req, res) => {
-  //set the user_id cookie to an empty string on logout
   req.session = null;
   userURLS = {};
   res.redirect("/login");
@@ -218,49 +226,54 @@ app.post("/logout", (req, res) => {
 
 //displays the register page
 app.get("/register", (req, res) => {
-  //change template Vars to use user ID now
-  let templateVars = { user_id: req.session.id, userEmail: checkUserId(req.session.id) };
+  let templateVars = { 
+    user_id: req.session.id, 
+    userEmail: checkUserId(req.session.id) 
+  };
   res.render("register", templateVars);
 });
 
 //handles a new user registration
 app.post("/register", (req, res) => {
+  const { email, password } = req.body
+
   //check if req.body.email or req.body.password are not blank
-  if (req.body.email === "" || req.body.password === "") {
-    //send a 400 error - Bad Request
+  if (!checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
-    //check if someone tries to register an already registered email address
-  } else if (emailLookup(req.body.email)) {
+    //check if someone is already registered
+  } else if (getUserByEmail(email)) {
     res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
-    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
-    //generate a random userID
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    //generate a random userID using UUID/v4
     let id = generateRandomString();
-    //we are setting an encrypted cookie using the users id
+    //set an encrypted cookie for the user session.id
     req.session.id = id;
 
-    //implement a loop to check if userID/email exists?
-    //store user in userDB
+    //store new user in userDB
     userDatabase[id] = {
       id: id,
       email: req.body.email,
       password: hashedPassword
     };
-    //cookies now use randomly generated userID
-    console.log(id)
-    console.log(userDatabase); //log userDB to see if user was added OK
+    // console.log(userDatabase)
     res.redirect("urls");
   }
 });
 
 
-////////////////
-///GET ROUTES///
-////////////////
+//////////////////////////////////////////
+///GET AND POST ROUTES FOR TINYAPP CORE///
+//////////////////////////////////////////
 //Test home route - currently using to experiment with objects as I learn
 app.get("/", (req, res) => {
   res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
+});
+
+//Test Hello Route - Delete later as extraneous code
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //added through duration of the work - shows tinyURLS and largeURLS in JSON format
@@ -269,17 +282,12 @@ app.get("/urls.json", (req, res) => {
     urls: urlDatabase,
     user_id: req.session.id,
     userEmail: checkUserId(req.session.id)
-    //any other vars
   };
 
   //base code to check if a cookie exists
   if (req.session.id === null) {
-    // console.log("I am not logged in as a user")
     res.render("login", templateVars);
   } else {
-    // if !loggedIn{
-    //   res.sendStatus(403);
-    // } else {
     res.json(urlDatabase);
   }
 });
@@ -292,15 +300,12 @@ app.get("/urls", (req, res) => {
     urls: userURLS,
     user_id: req.session.id,
     userEmail: checkUserId(req.session.id)
-    //any other vars
   };
 
 
   if (!isLoggedIn(req.session.id)) {
     res.render("login", templateVars);
   } else {
-
-
     res.render("urls_index", templateVars);
   }
 });
@@ -352,12 +357,9 @@ app.post("/urls/:shortURL/update", (req, res) => {
   if (!isLoggedIn(req.session.id)) {
     res.sendStatus(403);
   } else if (!checkUserOwnsURL(req.session.id, req.params.shortURL)) {
-    // console.log(req.cookies.user_id)
-    // console.log()
     res.sendStatus(403);
   } else {
     urlDatabase[req.params.shortURL] = { longURL: req.body.longURL, userID: req.session.id };
-    console.log(urlDatabase);
     res.redirect("/urls");
 
   }
@@ -365,24 +367,15 @@ app.post("/urls/:shortURL/update", (req, res) => {
 
 //generates new tinyURL with a random shortURL using the generateRandomString() function
 app.post("/urls", (req, res) => {
-  // console.log(req.body);  // Log the POST request body to the console
-  let shortURL = generateRandomString(); //Log the randomly generated tinyURL to the console
-  console.log(req.body.longURL);
+  let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL: req.body.longURL,
     userID: req.session.id
   }; //send the new shortURL and longURL to urlDatabase
-  console.log(urlDatabase); //log the urlDatabase to check the new values get added ok.
   res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
-});
-
-//Test Hello Route - Delete later as extraneous code
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 //server listen - opens the server up to listen for requests from user
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
