@@ -65,7 +65,7 @@ app.post("/login", (req, res) => {
     res.sendStatus(400);
   }
   //check if we can find a matching user
-  const foundUser = helpers.getUserByEmail(email);
+  const foundUser = helpers.getUserByEmail(email, urlDatabase);
   if (foundUser === null || foundUser === undefined) {
     res.sendStatus(403);
   }
@@ -102,7 +102,7 @@ app.post("/register", (req, res) => {
   if (!helpers.checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
     //check if someone is already registered
-  } else if (helpers.getUserByEmail(email)) {
+  } else if (helpers.getUserByEmail(email, urlDatabase)) {
     res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
@@ -204,6 +204,10 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
+  }
+
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
+    return res.render("user_loggedout");
   }
   //setting a cookie to track number of times /urls/tinyURL is visited
   req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1
