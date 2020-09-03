@@ -66,7 +66,10 @@ const getUrlsForUser = (id) => {
     //does the user own any urls in our database?
     if (id === urlDatabase[url].userID) {
       //assign any found to UserURLS as {shorURL : LongURL}
-      userURLS[url] = urlDatabase[url].longURL;
+      userURLS[url] = {
+        longURL: urlDatabase[url].longURL,
+        dateCreated: urlDatabase[url].dateCreated
+      }
     }
   }
   return userURLS;

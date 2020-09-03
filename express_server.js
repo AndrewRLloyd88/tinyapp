@@ -155,7 +155,7 @@ app.get("/urls.json", (req, res) => {
 //displays the current url database
 app.get("/urls", (req, res) => {
   userURLS = helpers.getUrlsForUser(req.session.id);
-
+  console.log(userURLS)
   let templateVars = {
     urls: userURLS,
     user_id: req.session.id,
