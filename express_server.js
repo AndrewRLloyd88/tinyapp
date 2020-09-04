@@ -195,6 +195,10 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
+
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
+    return res.render("user_loggedout");
+  }
   //setting a cookie to track number of times /urls/tinyURL is visited
   req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1;
   //adds the cookies counter to our :urlViews key in userDB
