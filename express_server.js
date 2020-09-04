@@ -71,7 +71,7 @@ app.post("/login", (req, res) => {
   //check if we can find a matching user
   const foundUser = helpers.getUserByEmail(email, urlDatabase);
   if (foundUser === null || foundUser === undefined) {
-    res.sendStatus(403);
+    return res.sendStatus(403);
   }
   //does the password match?
   if (!helpers.passwordCheck(password, foundUser)) {
@@ -164,7 +164,6 @@ app.get("/urls.json", (req, res) => {
 //displays the current url database
 app.get("/urls", (req, res) => {
   userURLS = helpers.getUrlsForUser(req.session.id);
-  console.log(userURLS)
   let templateVars = {
     urls: userURLS,
     user_id: req.session.id,
