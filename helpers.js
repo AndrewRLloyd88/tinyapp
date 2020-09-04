@@ -1,5 +1,5 @@
 const urlDatabase = require('./urlDatabase');
-const userDatabase = require('./userDatabase')
+const userDatabase = require('./userDatabase');
 const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 
@@ -19,14 +19,14 @@ const checkUserId = (cookie) => {
 
 //check we are not creating duplicate users by checking req.body.email against db --refactor these functions
 const getUserByEmail = (email, database) => {
-  for (const users in database) {
+  for (const users in userDatabase) {
     //does the submitted email match an email in our db?
-    if (email === database[users].email) {
+    if (email === userDatabase[users].email) {
       const foundUser = users;
       return foundUser;
     }
   }
-  return undefined;
+  return false;
 };
 
 //checks if password matches password stored in userDB  -- refactor these functions
@@ -71,7 +71,7 @@ const getUrlsForUser = (id) => {
         dateCreated: urlDatabase[url].dateCreated,
         hits: urlDatabase[url].hits,
         urlViews: urlDatabase[url].urlViews
-      }
+      };
     }
   }
   return userURLS;
@@ -79,7 +79,6 @@ const getUrlsForUser = (id) => {
 
 //checks if the user owns the url by checking the urlID and their sessionID against the DB
 const checkUserOwnsURL = (id, request, urlDatabase) => {
-  console.log("request: " + id, request);
   if (urlDatabase[request].userID !== id) {
     return false;
   } else {
@@ -88,9 +87,7 @@ const checkUserOwnsURL = (id, request, urlDatabase) => {
 };
 
 const checkUrlExists = (req) => {
-  console.log(req);
   for (const urls in urlDatabase) {
-    console.log(urls);
     if (req === urls) {
       return true;
     }
@@ -101,7 +98,7 @@ const checkUrlExists = (req) => {
 //helper function
 const insertCharsAt = (str, index, value) => {
   return str.substr(0, index) + value + str.substr(index);
-}
+};
 
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
 const generateRandomString = () => {
@@ -112,10 +109,10 @@ const generateRandomString = () => {
 const getTodaysDate = () => {
   const todaysDate = new Date();
   const date = todaysDate.getDate();
-  const month = todaysDate.getMonth() + 1; // Since getMonth() returns 
+  const month = todaysDate.getMonth() + 1; // Since getMonth() returns
   const year = todaysDate.getFullYear();
   return date + "/" + month + "/" + year;
-}
+};
 
 module.exports = {
   checkUserId,
@@ -129,4 +126,5 @@ module.exports = {
   insertCharsAt,
   generateRandomString,
   getTodaysDate
-}
+
+};

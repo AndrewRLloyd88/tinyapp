@@ -24,9 +24,9 @@ describe('getUserByEmail', function() {
 });
 
 describe('getUserByEmail', function() {
-  it('should return undefined if a user does not exist', function() {
+  it('should return false if a user does not exist', function() {
     const user = getUserByEmail("user@exmple.com", testUsers)
-    const expectedOutput = undefined;
+    const expectedOutput = false;
     assert.equal(user, expectedOutput)
   });
 });

@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const helpers = require('./helpers');
 const urlDatabase = require('./urlDatabase');
-const userDatabase = require('./userDatabase')
+const userDatabase = require('./userDatabase');
 //generate 10 salt rounds
 const salt = bcrypt.genSaltSync(10);
 const cookieSession = require('cookie-session');
@@ -36,12 +36,6 @@ let userURLS = {};
 const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
 
-
-// Edge cases
-//What would happen if a client requests a non-existent shortURL?
-//attempt to fix in
-
-
 ///////////////////////////////////////////
 //user account management specific routes
 //-----------------------------------------
@@ -53,10 +47,6 @@ app.get("/login", (req, res) => {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
-
-  if (helpers.checkIsLoggedIn(req.session.id)) {
-    return res.redirect("/urls")
-  } 
   res.render('login', templateVars);
 });
 
@@ -69,9 +59,9 @@ app.post("/login", (req, res) => {
     res.sendStatus(400);
   }
   //check if we can find a matching user
-  const foundUser = helpers.getUserByEmail(email, urlDatabase);
+  const foundUser = helpers.getUserByEmail(email);
   if (foundUser === null || foundUser === undefined) {
-    return res.sendStatus(403);
+    res.sendStatus(403);
   }
   //does the password match?
   if (!helpers.passwordCheck(password, foundUser)) {
@@ -96,22 +86,17 @@ app.get("/register", (req, res) => {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
-
-  if (helpers.checkIsLoggedIn(req.session.id)) {
-    return res.redirect("/urls")
-  } 
   res.render("register", templateVars);
 });
 
 //handles a new user registration
 app.post("/register", (req, res) => {
-  
   const { email, password } = req.body;
   //check if req.body.email or req.body.password are not blank
   if (!helpers.checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
     //check if someone is already registered
-  } else if (helpers.getUserByEmail(email, urlDatabase)) {
+  } else if (helpers.getUserByEmail(email)) {
     res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
@@ -127,7 +112,6 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       password: hashedPassword
     };
-    // console.log(userDatabase)
     res.redirect("urls");
   }
 });
@@ -193,18 +177,16 @@ app.get("/urls/new", (req, res) => {
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
-  shortURL = req.params.shortURL
+  shortURL = req.params.shortURL;
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
   const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"];
   //cookie to track shortURL unique visits
-  req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || urlDatabase[`${req.params.shortURL}`].hits) + 1
+  req.session[`${req.params.shortURL}`] = (req.session[`${req.params.shortURL}`] || urlDatabase[`${req.params.shortURL}`].hits) + 1;
   //checking our counter for individual clicks
-  console.log(req.session[`${req.params.shortURL}`])
   //add the cookies count to our hits: key in urlDatabase
-  urlDatabase[`${req.params.shortURL}`].hits = req.session[`${req.params.shortURL}`]
-  console.log(urlDatabase)
+  urlDatabase[`${req.params.shortURL}`].hits = req.session[`${req.params.shortURL}`];
   res.redirect(longURL);
 });
 
@@ -213,16 +195,10 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!helpers.checkUrlExists(req.params.shortURL)) {
     return res.sendStatus(404);
   }
-
-  if (!helpers.checkIsLoggedIn(req.session.id)) {
-    return res.render("user_loggedout");
-  }
   //setting a cookie to track number of times /urls/tinyURL is visited
-  req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1
-  console.log(req.session[`${req.params.shortURL}_views`])
+  req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1;
   //adds the cookies counter to our :urlViews key in userDB
-  urlDatabase[`${req.params.shortURL}`].urlViews = req.session[`${req.params.shortURL}_views`]
-  console.log(urlDatabase)
+  urlDatabase[`${req.params.shortURL}`].urlViews = req.session[`${req.params.shortURL}_views`];
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
@@ -258,58 +234,55 @@ app.post("/urls/:shortURL/update", (req, res) => {
     res.sendStatus(403);
   } else {
 
-    let longURL = req.body.longURL
+    let longURL = req.body.longURL;
 
-    if(!longURL.includes("http://") && !longURL.includes("www")) {
-    console.log("adding http://www")
-    longURL = helpers.insertCharsAt(longURL, 0, "http://www.")
-  }
+    if (!longURL.includes("http://") && !longURL.includes("www")) {
+      longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
+    }
   
-  if (!longURL.includes("www")) {
-    longURL = helpers.insertCharsAt(longURL, 0, "www.")
-  } 
+    if (!longURL.includes("www")) {
+      longURL = helpers.insertCharsAt(longURL, 0, "www.");
+    }
 
-    urlDatabase[req.params.shortURL] = { 
-      longURL: longURL, 
+    urlDatabase[req.params.shortURL] = {
+      longURL: longURL,
       userID: req.session.id,
       dateCreated: helpers.getTodaysDate(),
       hits: urlDatabase[req.params.shortURL].hits,
       urlViews: urlDatabase[`${req.params.shortURL}`].urlViews
     };
-    console.log(urlDatabase);
     res.redirect("/urls");
   }
 });
 
 //generates new tinyURL with a random shortURL, given a unique id with generateRandomString()
 app.post("/urls", (req, res) => {
-  let longURL = req.body.longURL
+  let longURL = req.body.longURL;
   //stop people adding blank data via cURL POST request
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.sendStatus(403);
-  } 
+  }
   //correcting Users urls if they just type website.com
-  if(!longURL.includes("http://") && !longURL.includes("www")) {
-    console.log("adding http://www")
-    longURL = helpers.insertCharsAt(longURL, 0, "http://www.")
+  if (!longURL.includes("http://") && !longURL.includes("www")) {
+    longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
   }
   
   if (!longURL.includes("www")) {
-    longURL = helpers.insertCharsAt(longURL, 0, "www.")
-  } 
+    longURL = helpers.insertCharsAt(longURL, 0, "www.");
+  }
 
-    let shortURL = helpers.generateRandomString();
+  let shortURL = helpers.generateRandomString();
 
-    //add to the urlDatabase
-    urlDatabase[shortURL] = {
-      longURL: longURL,
-      userID: req.session.id,
-      dateCreated: helpers.getTodaysDate(),
-      hits: 0,
-      urlViews: 0
-    }; //send the new shortURL and longURL to urlDatabase
-    res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
-  });
+  //add to the urlDatabase
+  urlDatabase[shortURL] = {
+    longURL: longURL,
+    userID: req.session.id,
+    dateCreated: helpers.getTodaysDate(),
+    hits: 0,
+    urlViews: 0
+  }; //send the new shortURL and longURL to urlDatabase
+  res.redirect(`/urls/${shortURL}`); // redirection to /urls/:shortURL, where shortURL is the random string we generated.
+});
 
 
 //server listen - opens the server up to listen for requests from user
