@@ -60,12 +60,12 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
   //are our login fields populated?
   if (!helpers.checkFieldsPopulated(email, password)) {
-    res.sendStatus(400);
+    return res.sendStatus(400);
   }
   //check if we can find a matching user
   const foundUser = helpers.getUserByEmail(email);
   if (foundUser === null || foundUser === undefined) {
-    res.sendStatus(403);
+    return res.sendStatus(403);
   }
   //does the password match?
   if (!helpers.passwordCheck(password, foundUser)) {
@@ -104,10 +104,10 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   //check if req.body.email or req.body.password are not blank
   if (!helpers.checkFieldsPopulated(email, password)) {
-    res.sendStatus(400);
+    return res.sendStatus(400);
     //check if someone is already registered
   } else if (helpers.getUserByEmail(email)) {
-    res.sendStatus(400);
+    return res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
     const hashedPassword = bcrypt.hashSync(password, salt);
@@ -243,9 +243,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL/update", (req, res) => {
   //is the user logged in?
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    res.sendStatus(403);
+    return res.sendStatus(403);
   } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
-    res.sendStatus(403);
+    return res.sendStatus(403);
   } else {
 
     let longURL = req.body.longURL;
