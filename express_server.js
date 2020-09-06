@@ -43,6 +43,11 @@ const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
 
 //displays login page
 app.get("/login", (req, res) => {
+  //check if a user is already logged in
+  if (helpers.checkIsLoggedIn(req.session.id)) {
+    //redirect to /urls
+    return res.redirect("/urls");
+  }
   let templateVars = {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
@@ -53,7 +58,6 @@ app.get("/login", (req, res) => {
 //handles login requests
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-
   //are our login fields populated?
   if (!helpers.checkFieldsPopulated(email, password)) {
     res.sendStatus(400);
@@ -82,6 +86,12 @@ app.post("/logout", (req, res) => {
 
 //displays the register page
 app.get("/register", (req, res) => {
+//check if a user is already logged in
+if (helpers.checkIsLoggedIn(req.session.id)) {
+  //redirect to /urls
+  return res.redirect("/urls");
+}
+
   let templateVars = {
     user_id: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
