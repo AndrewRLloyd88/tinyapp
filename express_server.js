@@ -98,13 +98,14 @@ if (helpers.checkIsLoggedIn(req.session.id)) {
 //handles a new user registration
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  //check if req.body.email or req.body.password are not blank
+  //check if email and password fields have been filled in
   if (!helpers.checkFieldsPopulated(email, password)) {
-    return res.sendStatus(400);
-    //check if someone is already registered
-  } else if (helpers.getUserByEmail(email, userDatabase)) {
-    return res.sendStatus(400);
-  } else {
+    return res.status(400).send("Please make sure to fill in both username and password fields");
+  }
+    //check if an email address is not already registered
+  if (helpers.getUserByEmail(email, userDatabase)) {
+    return res.status(400).send("An account for the specified email address already exists. Try another email address.");
+  }
     //use bCrypt to auto-generate a salt and hash from plaintext:
     const hashedPassword = bcrypt.hashSync(password, salt);
     //generate a random userIDu using helper function
@@ -119,7 +120,7 @@ app.post("/register", (req, res) => {
       password: hashedPassword
     };
     res.redirect("urls");
-  }
+  
 });
 
 
