@@ -11,9 +11,8 @@ const checkUserId = (cookie) => {
         return userDatabase[users].email;
       }
     }
-  } else {
-    return undefined;
   }
+  return undefined;
 };
 
 //check we are not creating duplicate users by checking req.body.email against db --refactor these functions
