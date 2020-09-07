@@ -78,9 +78,8 @@ const getUrlsForUser = (id) => {
 const checkUserOwnsURL = (id, request, urlDatabase) => {
   if (urlDatabase[request].userID !== id) {
     return false;
-  } else {
+  } 
     return true;
-  }
 };
 
 //checks if the requested urls/tinyURL exists in the database
