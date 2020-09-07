@@ -2,7 +2,7 @@ const urlDatabase = require('./urlDatabase');
 const userDatabase = require('./userDatabase');
 const bcrypt = require('bcrypt');
 
-//checks user_id cookie and sees if there is a matching userID in the database. --refactor these functions
+//checks user_id cookie and sees if there is a matching userID in the database.
 const checkUserId = (cookie) => {
   if (cookie !== "") {
     for (const users in userDatabase) {
@@ -15,7 +15,7 @@ const checkUserId = (cookie) => {
   return undefined;
 };
 
-//check we are not creating duplicate users by checking req.body.email against db --refactor these functions
+//check we are not creating duplicate users by checking req.body.email against db 
 const getUserByEmail = (email, database) => {
   for (const users in database) {
     //does the submitted email match an email in our db?
@@ -27,7 +27,7 @@ const getUserByEmail = (email, database) => {
   return false;
 };
 
-//checks if password matches password stored in userDB  -- refactor these functions
+//checks if password matches password stored in userDB
 const passwordCheck = (password, foundUser) => {
   if (!foundUser) {
     return false;
@@ -39,7 +39,7 @@ const passwordCheck = (password, foundUser) => {
   return false;
 };
 
-//checks if fields are empty -- refactor this check
+//checks if fields are empty
 const checkFieldsPopulated = (email, password) => {
   if (email === "" || password === "") {
     //send a 400 error - Bad Request
