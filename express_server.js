@@ -203,12 +203,17 @@ app.get("/u/:shortURL", (req, res) => {
 
 //displays information about the inputted shortURL e.g. urls/b2xVn2 will show the shortURL and long URL
 app.get("/urls/:shortURL", (req, res) => {
+  //checks if urlExists in urlDB
   if (!helpers.checkUrlExists(req.params.shortURL)) {
-    return res.sendStatus(404);
+    return res.status(404).send("shortURL does not exist.");
   }
-
+  //checks if user is logged in and redirects to an error page if they aren't.
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.render("user_loggedout");
+  }
+  //checks if user owns this URL and blocks them accessing the edit page if they dont
+  if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
+    return res.status(403).send("You do not have permission to edit this shortURL");
   }
   //setting a cookie to track number of times /urls/tinyURL is visited
   req.session[`${req.params.shortURL}_views`] = (req.session[`${req.params.shortURL}_views`] || urlDatabase[`${req.params.shortURL}`].urlViews) + 1;
@@ -217,6 +222,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
 
+  //send variables across to use in our urls_show ejs template in /views
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: longURL,
@@ -277,11 +283,11 @@ app.post("/urls", (req, res) => {
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.sendStatus(403);
   }
-  //correcting Users urls if they just type website.com
+  //prepends http://www. if user has not included either in longURL
   if (!longURL.includes("http://") && !longURL.includes("www")) {
     longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
   }
-  
+  //adds www. if not present in URL user creates.
   if (!longURL.includes("www")) {
     longURL = helpers.insertCharsAt(longURL, 0, "www.");
   }
