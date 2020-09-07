@@ -32,9 +32,6 @@ app.use(morgan('short'));
 //keeps track of URLS belonging to the specific user logged in, populated by checking userID against userDB shortURL ids.
 let userURLS = {};
 
-//test array for use on "/" route - will become surplus to requirements later on
-const greetings = ["Hi", "Hello", "welcome", "Wilkommen"];
-
 
 ///////////////////////////////////////////
 //user account management specific routes
@@ -60,21 +57,20 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
   //are our login fields populated?
   if (!helpers.checkFieldsPopulated(email, password)) {
-    return res.sendStatus(400);
+    return res.status(400).send("Please make sure to fill in both username and password fields");
   }
   //check if we can find a matching user
   const foundUser = helpers.getUserByEmail(email, userDatabase);
   if (foundUser === null || foundUser === undefined) {
-    return res.sendStatus(403);
+    return res.status(403).send("Authentication failed. Please check your username/password.");
   }
   //does the password match?
   if (!helpers.passwordCheck(password, foundUser)) {
-    res.sendStatus(403);
-  } else {
-    req.session.id = userDatabase[foundUser].id;
-    userURLS = helpers.getUrlsForUser(req.session.id);
-    res.redirect("/urls");
-  }
+    return res.status(403).send("Authentication failed. Please check your username/password.");
+  } 
+  req.session.id = userDatabase[foundUser].id;
+  userURLS = helpers.getUrlsForUser(req.session.id);
+  res.redirect("/urls");
 });
 
 //clear cookies and userURLS on logout
@@ -130,14 +126,18 @@ app.post("/register", (req, res) => {
 //////////////////////////////////////////
 ///GET AND POST ROUTES FOR TINYAPP CORE///
 //////////////////////////////////////////
-//Test home route - currently using to experiment with objects as I learn
+//Home route redirects to login if not /logged in or /urls if logged in
 app.get("/", (req, res) => {
-  res.send(`<h1>${greetings[3]}! Thank you for visiting the server</h1>`);
-});
-
-//Test Hello Route - Delete later as extraneous code
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+  let templateVars = {
+    urls: userURLS,
+    user_id: req.session.id,
+    userEmail: helpers.checkUserId(req.session.id)
+  };
+  if (!helpers.checkIsLoggedIn(req.session.id)) {
+    res.render("login", templateVars);
+  } else {
+    res.render("urls_index", templateVars);
+  }
 });
 
 //shows urlDatabase in JSON format to registered users only
