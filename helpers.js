@@ -86,6 +86,7 @@ const checkUserOwnsURL = (id, request, urlDatabase) => {
   }
 };
 
+//checks if the requested urls/tinyURL exists in the database
 const checkUrlExists = (req) => {
   for (const urls in urlDatabase) {
     if (req === urls) {
@@ -95,15 +96,19 @@ const checkUrlExists = (req) => {
   return false;
 };
 
-//helper function
+//used for url creation to see if a user entered http://www. or www. and prepends if missing
 const insertCharsAt = (str, index, value) => {
   return str.substr(0, index) + value + str.substr(index);
 };
 
 //returns 6 random characters from characters and associates the new tinyURL to a longURL
 const generateRandomString = () => {
-  const randomID = uuid.v4().substr(0, 6);
-  return randomID;
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 };
 
 const getTodaysDate = () => {
