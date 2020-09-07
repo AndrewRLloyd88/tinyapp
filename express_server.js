@@ -140,6 +140,11 @@ app.get("/", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//prompts unlogged in user to log in or register
+app.get("/loginCheck", (req, res) => {
+  res.render("user_loggedout");
+});
+
 //shows urlDatabase in JSON format to registered users only
 app.get("/urls.json", (req, res) => {
   let templateVars = {
@@ -162,7 +167,7 @@ app.get("/urls", (req, res) => {
     userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
-
+  //checks if user is logged in if not render the login page
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.render("login", templateVars);
   }
