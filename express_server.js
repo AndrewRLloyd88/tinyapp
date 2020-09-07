@@ -136,9 +136,8 @@ app.get("/", (req, res) => {
   };
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     res.render("login", templateVars);
-  } else {
-    res.render("urls_index", templateVars);
   }
+  res.render("urls_index", templateVars);
 });
 
 //shows urlDatabase in JSON format to registered users only
@@ -150,10 +149,9 @@ app.get("/urls.json", (req, res) => {
   };
 
   if (req.session.id === null || !req.session.id) {
-    res.render("login", templateVars);
-  } else {
-    res.json(urlDatabase);
+    return res.render("login", templateVars);
   }
+  res.json(urlDatabase);
 });
 
 //displays the current url database
@@ -166,10 +164,9 @@ app.get("/urls", (req, res) => {
   };
 
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    res.render("login", templateVars);
-  } else {
-    res.render("urls_index", templateVars);
+    return res.render("login", templateVars);
   }
+  res.render("urls_index", templateVars);
 });
 
 //page that lets a user create a new shortened URL
@@ -180,10 +177,9 @@ app.get("/urls/new", (req, res) => {
   };
 
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    res.render("login", templateVars);
-  } else {
-    res.render("urls_new", templateVars);
+    return res.render("login", templateVars);
   }
+  res.render("urls_new", templateVars);
 });
 
 //handles a redirect from the u/shortURL to the full longURL
@@ -235,14 +231,17 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //allows logged in users to delete tinyURLs associated only with their account
 app.post("/urls/:shortURL/delete", (req, res) => {
+  //check user is logged in
   if (!helpers.checkIsLoggedIn(req.session.id)) {
     return res.status(403).send("You must be logged in and own this shortURL to delete this shortURL");
-  } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
-    return res.status(403).send("You do not have permission to delete this shortURL");
-  } else {
-    delete urlDatabase[`${req.params.shortURL}`];
-    res.redirect("/urls");
   }
+  //check user owns the url they are trying to delete
+  if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
+    return res.status(403).send("You do not have permission to delete this shortURL");
+  }
+  //delete the url and redirect to /urls
+  delete urlDatabase[`${req.params.shortURL}`];
+  res.redirect("/urls");
 });
 
 ///allows logged in users to update tinyURLs associated only with their account
