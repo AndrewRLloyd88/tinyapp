@@ -60,7 +60,7 @@ const checkIsLoggedIn = (req) => {
 
 //grabs the urls associated with the logged in users id
 const getUrlsForUser = (id) => {
-  userURLS = {};
+  let userURLS = {};
   for (const url in urlDatabase) {
     //does the user own any urls in our database?
     if (id === urlDatabase[url].userID) {
