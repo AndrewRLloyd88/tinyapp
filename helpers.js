@@ -52,9 +52,8 @@ const checkFieldsPopulated = (email, password) => {
 const checkIsLoggedIn = (req) => {
   if (req === undefined) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 };
 
 //grabs the urls associated with the logged in users id
