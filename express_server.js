@@ -46,7 +46,7 @@ app.get("/login", (req, res) => {
     return res.redirect("/urls");
   }
   let templateVars = {
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
   res.render('login', templateVars);
@@ -67,7 +67,7 @@ app.post("/login", (req, res) => {
   //does the password match?
   if (!helpers.passwordCheck(password, foundUser)) {
     return res.status(403).send("Authentication failed. Please check your username/password.");
-  } 
+  }
   req.session.id = userDatabase[foundUser].id;
   userURLS = helpers.getUrlsForUser(req.session.id);
   res.redirect("/urls");
@@ -82,14 +82,14 @@ app.post("/logout", (req, res) => {
 
 //displays the register page
 app.get("/register", (req, res) => {
-//check if a user is already logged in
-if (helpers.checkIsLoggedIn(req.session.id)) {
-  //redirect to /urls
-  return res.redirect("/urls");
-}
+  //check if a user is already logged in
+  if (helpers.checkIsLoggedIn(req.session.id)) {
+    //redirect to /urls
+    return res.redirect("/urls");
+  }
 
   let templateVars = {
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
   res.render("register", templateVars);
@@ -102,25 +102,25 @@ app.post("/register", (req, res) => {
   if (!helpers.checkFieldsPopulated(email, password)) {
     return res.status(400).send("Please make sure to fill in both username and password fields");
   }
-    //check if an email address is not already registered
+  //check if an email address is not already registered
   if (helpers.getUserByEmail(email, userDatabase)) {
     return res.status(400).send("An account for the specified email address already exists. Try another email address.");
   }
-    //use bCrypt to auto-generate a salt and hash from plaintext:
-    const hashedPassword = bcrypt.hashSync(password, salt);
-    //generate a random userIDu using helper function
-    let id = helpers.generateRandomString();
-    //set an encrypted cookie for the user session.id
-    req.session.id = id;
+  //use bCrypt to auto-generate a salt and hash from plaintext:
+  const hashedPassword = bcrypt.hashSync(password, salt);
+  //generate a random userIDu using helper function
+  let id = helpers.generateRandomString();
+  //set an encrypted cookie for the user session.id
+  req.session.id = id;
 
-    //store new user in userDB
-    userDatabase[id] = {
-      id: id,
-      email: req.body.email,
-      password: hashedPassword
-    };
-    res.redirect("urls");
-  
+  //store new user in userDB
+  userDatabase[id] = {
+    id: id,
+    email: req.body.email,
+    password: hashedPassword
+  };
+  res.redirect("urls");
+
 });
 
 
@@ -131,7 +131,7 @@ app.post("/register", (req, res) => {
 app.get("/", (req, res) => {
   let templateVars = {
     urls: userURLS,
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
   if (!helpers.checkIsLoggedIn(req.session.id)) {
@@ -145,7 +145,7 @@ app.get("/", (req, res) => {
 app.get("/urls.json", (req, res) => {
   let templateVars = {
     urls: urlDatabase,
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
 
@@ -161,7 +161,7 @@ app.get("/urls", (req, res) => {
   userURLS = helpers.getUrlsForUser(req.session.id);
   let templateVars = {
     urls: userURLS,
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
 
@@ -175,7 +175,7 @@ app.get("/urls", (req, res) => {
 //page that lets a user create a new shortened URL
 app.get("/urls/new", (req, res) => {
   let templateVars = {
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id)
   };
 
@@ -188,9 +188,8 @@ app.get("/urls/new", (req, res) => {
 
 //handles a redirect from the u/shortURL to the full longURL
 app.get("/u/:shortURL", (req, res) => {
-  shortURL = req.params.shortURL;
   if (!helpers.checkUrlExists(req.params.shortURL)) {
-    return res.sendStatus(404);
+    return res.status(404).send("shortURL does not exist.");
   }
   const longURL = urlDatabase[`${req.params.shortURL}`]["longURL"];
   //cookie to track shortURL unique visits
@@ -226,7 +225,7 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = {
     shortURL: req.params.shortURL,
     longURL: longURL,
-    user_id: req.session.id,
+    userID: req.session.id,
     userEmail: helpers.checkUserId(req.session.id),
     views: urlDatabase[`${req.params.shortURL}`].urlViews,
     hits: urlDatabase[`${req.params.shortURL}`].hits
@@ -237,9 +236,9 @@ app.get("/urls/:shortURL", (req, res) => {
 //allows logged in users to delete tinyURLs associated only with their account
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    res.sendStatus(403);
+    return res.status(403).send("You must be logged in and own this shortURL to delete this shortURL");
   } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
-    res.sendStatus(403);
+    return res.status(403).send("You do not have permission to delete this shortURL");
   } else {
     delete urlDatabase[`${req.params.shortURL}`];
     res.redirect("/urls");
@@ -250,30 +249,31 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:shortURL/update", (req, res) => {
   //is the user logged in?
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    return res.sendStatus(403);
-  } else if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
-    return res.sendStatus(403);
-  } else {
-
-    let longURL = req.body.longURL;
-
-    if (!longURL.includes("http://") && !longURL.includes("www")) {
-      longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
-    }
-  
-    if (!longURL.includes("www")) {
-      longURL = helpers.insertCharsAt(longURL, 0, "www.");
-    }
-
-    urlDatabase[req.params.shortURL] = {
-      longURL: longURL,
-      userID: req.session.id,
-      dateCreated: helpers.getTodaysDate(),
-      hits: urlDatabase[req.params.shortURL].hits,
-      urlViews: urlDatabase[`${req.params.shortURL}`].urlViews
-    };
-    res.redirect("/urls");
+    return res.status(403).send("You must be logged in and own this shortURL to modify this shortURL");
   }
+  if (!helpers.checkUserOwnsURL(req.session.id, req.params.shortURL, urlDatabase)) {
+    return res.status(403).send("You do not have permission to edit this shortURL");
+  }
+  //set the requested LongURL to longURL variable
+  let longURL = req.body.longURL;
+  //prepends http://www. to the longURL if user has not included either in longURL
+  if (!longURL.includes("http://") && !longURL.includes("www")) {
+    longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
+  }
+  //prepends www. to the longURL if not present in URL user creates.
+  if (!longURL.includes("www")) {
+    longURL = helpers.insertCharsAt(longURL, 0, "www.");
+  }
+  //modify the record in the urlDatabase
+  urlDatabase[req.params.shortURL] = {
+    longURL: longURL,
+    userID: req.session.id,
+    dateCreated: helpers.getTodaysDate(),
+    hits: urlDatabase[req.params.shortURL].hits,
+    urlViews: urlDatabase[`${req.params.shortURL}`].urlViews
+  };
+  res.redirect("/urls");
+
 });
 
 //generates new tinyURL with a random shortURL, given a unique id with generateRandomString()
@@ -281,20 +281,20 @@ app.post("/urls", (req, res) => {
   let longURL = req.body.longURL;
   //stop people adding blank data via cURL POST request
   if (!helpers.checkIsLoggedIn(req.session.id)) {
-    return res.sendStatus(403);
+    return res.status(403).send("You must be logged in to create new shortURLs");
   }
-  //prepends http://www. if user has not included either in longURL
+  //prepends http://www. to the longURL if user has not included either in longURL
   if (!longURL.includes("http://") && !longURL.includes("www")) {
     longURL = helpers.insertCharsAt(longURL, 0, "http://www.");
   }
-  //adds www. if not present in URL user creates.
+  //prepends www. to the longURL if not present in URL user creates.
   if (!longURL.includes("www")) {
     longURL = helpers.insertCharsAt(longURL, 0, "www.");
   }
-
+  //randomly generates 6 characters for the shortURL
   let shortURL = helpers.generateRandomString();
 
-  //add to the urlDatabase
+  //add the new shortURL longURL combo to the urlDatabase
   urlDatabase[shortURL] = {
     longURL: longURL,
     userID: req.session.id,
