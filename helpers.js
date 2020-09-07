@@ -1,6 +1,5 @@
 const urlDatabase = require('./urlDatabase');
 const userDatabase = require('./userDatabase');
-const uuid = require('uuid');
 const bcrypt = require('bcrypt');
 
 //checks user_id cookie and sees if there is a matching userID in the database. --refactor these functions
@@ -19,9 +18,9 @@ const checkUserId = (cookie) => {
 
 //check we are not creating duplicate users by checking req.body.email against db --refactor these functions
 const getUserByEmail = (email, database) => {
-  for (const users in userDatabase) {
+  for (const users in database) {
     //does the submitted email match an email in our db?
-    if (email === userDatabase[users].email) {
+    if (email === database[users].email) {
       const foundUser = users;
       return foundUser;
     }

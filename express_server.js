@@ -63,7 +63,7 @@ app.post("/login", (req, res) => {
     return res.sendStatus(400);
   }
   //check if we can find a matching user
-  const foundUser = helpers.getUserByEmail(email);
+  const foundUser = helpers.getUserByEmail(email, userDatabase);
   if (foundUser === null || foundUser === undefined) {
     return res.sendStatus(403);
   }
@@ -106,12 +106,12 @@ app.post("/register", (req, res) => {
   if (!helpers.checkFieldsPopulated(email, password)) {
     return res.sendStatus(400);
     //check if someone is already registered
-  } else if (helpers.getUserByEmail(email)) {
+  } else if (helpers.getUserByEmail(email, userDatabase)) {
     return res.sendStatus(400);
   } else {
     //use bCrypt to auto-generate a salt and hash from plaintext:
     const hashedPassword = bcrypt.hashSync(password, salt);
-    //generate a random userID using UUID/v4
+    //generate a random userIDu using helper function
     let id = helpers.generateRandomString();
     //set an encrypted cookie for the user session.id
     req.session.id = id;
